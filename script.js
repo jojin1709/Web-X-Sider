@@ -5,6 +5,9 @@ const status = document.getElementById("status");
 const exportActions = document.getElementById("actions");
 const exportTxt = document.getElementById("exportTxt");
 const exportJson = document.getElementById("exportJson");
+const scopeInput = document.getElementById("scopeInput");
+const importedUrlInput = document.getElementById("importedUrlInput");
+const priorityDashboard = document.getElementById("priority-dashboard");
 
 const allResults = [];
 const scannedJs = new Set(); // avoid duplicate scans across sources
@@ -817,7 +820,8 @@ const state = {
   probedDomains: new Set(),
   isScanning: false,
   isCrawlerStopped: false,
-  fetchFailures: []
+  fetchFailures: [],
+  scopeRules: []
 };
 
 const updateStats = () => {
@@ -892,6 +896,46 @@ function classifyFinding(type, value) {
   return { severity: "low", hint: "Low signal by itself; keep for mapping and chaining with other findings." };
 }
 
+function parseScopeRules(raw) {
+  return String(raw || "")
+    .split(/\r?\n|,/)
+    .map(item => item.trim().toLowerCase())
+    .filter(Boolean)
+    .map(item => item.replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, ""))
+    .filter(item => /^[*.a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(item));
+}
+
+function isHostInScope(hostname, rules) {
+  if (!rules || rules.length === 0) return true;
+  const host = String(hostname || "").toLowerCase().replace(/^www\./, "");
+  return rules.some(rule => {
+    if (rule.startsWith("*.")) {
+      const base = rule.slice(2);
+      return host === base || host.endsWith(`.${base}`);
+    }
+    return host === rule || host.endsWith(`.${rule}`);
+  });
+}
+
+function parseImportedUrls(raw, baseUrl) {
+  const base = new URL(baseUrl);
+  const urls = new Set();
+  String(raw || "")
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .forEach(line => {
+      const matches = line.match(/https?:\/\/[^\s"'<>]+|\/[A-Za-z0-9_~./?&=%{}:@-]+/gi) || [];
+      matches.forEach(match => {
+        try {
+          const cleaned = match.replace(/[),.;\]]+$/, "");
+          urls.add(normalizeUrl(new URL(cleaned, base.origin).href));
+        } catch { }
+      });
+    });
+  return [...urls];
+}
+
 const addResult = (source, type, value, line = 0) => {
   // Deduplicate same value at same line in same source ONLY if type is also the same
   if (state.allData.some(d => d.source === source && d.value === value && d.line === line && d.type === type)) return;
@@ -905,6 +949,36 @@ const addResult = (source, type, value, line = 0) => {
   updateStats();
 };
 
+function renderPriorityDashboard() {
+  if (!priorityDashboard) return;
+  const groups = { critical: [], high: [], medium: [], low: [] };
+  state.allData.forEach(item => {
+    const severity = item.severity || "low";
+    if (groups[severity]) groups[severity].push(item);
+  });
+
+  const labels = [
+    ["critical", "Critical"],
+    ["high", "High"],
+    ["medium", "Medium"],
+    ["low", "Low"]
+  ];
+
+  priorityDashboard.innerHTML = labels.map(([key, label]) => {
+    const items = groups[key];
+    const top = items.slice(0, 4).map(item =>
+      `<li>${escapeHtml(item.type)}: ${escapeHtml(String(item.value).slice(0, 120))}</li>`
+    ).join("");
+    return `
+      <div class="priority-card priority-${key}">
+        <h3><span>${label}</span><span class="priority-count">${items.length}</span></h3>
+        <ul>${top || "<li>No findings in this bucket.</li>"}</ul>
+      </div>
+    `;
+  }).join("");
+  priorityDashboard.style.display = state.allData.length ? "grid" : "none";
+}
+
 const setProgress = (percent) => {
   const p = Math.round(percent);
   document.getElementById("progress-bar").style.width = `${p}%`;
@@ -917,6 +991,11 @@ const startScan = async (maxDepth) => {
   if (!siteUrl) return alert("Enter a valid URL");
   if (!/^https?:\/\//i.test(siteUrl)) siteUrl = "https://" + siteUrl;
   siteUrl = normalizeUrl(siteUrl);
+  const startHost = new URL(siteUrl).hostname.replace(/^www\./, "");
+  state.scopeRules = parseScopeRules(scopeInput?.value || "");
+  if (state.scopeRules.length && !isHostInScope(startHost, state.scopeRules)) {
+    return alert("Target URL is outside the scope list.");
+  }
 
   state.scanned = 0;
   state.endpoints.clear();
@@ -928,6 +1007,7 @@ const startScan = async (maxDepth) => {
   state.fetchFailures = [];
   scannedJs.clear(); // Reset JS scan cache
   updateStats();
+  renderPriorityDashboard();
 
   results.innerHTML = "";
   scanBtn.style.display = "none";
@@ -944,6 +1024,23 @@ const startScan = async (maxDepth) => {
 
   try {
     await recursiveScan(siteUrl, maxDepth);
+    const importedUrls = parseImportedUrls(importedUrlInput?.value || "", siteUrl)
+      .filter(importedUrl => {
+        try {
+          const host = new URL(importedUrl).hostname;
+          const normalizedHost = host.replace(/^www\./, "");
+          return state.scopeRules.length ? isHostInScope(normalizedHost, state.scopeRules) : (normalizedHost === startHost || normalizedHost.endsWith("." + startHost));
+        } catch {
+          return false;
+        }
+      })
+      .slice(0, 150);
+
+    for (const importedUrl of importedUrls) {
+      if (state.isCrawlerStopped) break;
+      await recursiveScan(importedUrl, 0, 0, startHost);
+    }
+
     if (!state.isCrawlerStopped && state.fetchFailures.length && state.allData.length === 0) {
       status.innerText = `Scan finished, but nothing could be fetched. ${state.fetchFailures[0]}`;
     } else if (!state.isCrawlerStopped) {
@@ -956,6 +1053,7 @@ const startScan = async (maxDepth) => {
     setProgress(100);
     document.getElementById("filter-section").style.display = "block";
     exportActions.style.display = "flex";
+    renderPriorityDashboard();
     renderResults();
   } catch (e) {
     console.error(e);
@@ -984,9 +1082,14 @@ async function recursiveScan(url, maxDepth, currentDepth = 0, targetHost = null)
   const normUrl = normalizeUrl(url);
   try {
     const currentUrlObj = new URL(normUrl);
-    if (!targetHost) targetHost = currentUrlObj.hostname;
+    const currentHost = currentUrlObj.hostname.replace(/^www\./, "");
+    if (!targetHost) targetHost = currentHost;
 
-    if (currentUrlObj.hostname !== targetHost && !currentUrlObj.hostname.endsWith("." + targetHost)) {
+    if (state.scopeRules.length && !isHostInScope(currentHost, state.scopeRules)) {
+      return;
+    }
+
+    if (!state.scopeRules.length && currentHost !== targetHost && !currentHost.endsWith("." + targetHost)) {
       return;
     }
 
@@ -1009,10 +1112,11 @@ async function recursiveScan(url, maxDepth, currentDepth = 0, targetHost = null)
 
     // Extract data with line numbers
     const foundEndpoints = extractEndpointsWithLines(content);
+    const foundApiCalls = extractApiCallsWithLines(content, normUrl);
     const foundSecrets = extractSecretsWithLines(content);
     const foundFiles = extractFilesWithLines(content);
 
-    foundEndpoints.forEach(e => {
+    [...foundEndpoints, ...foundApiCalls].forEach(e => {
       addResult(normUrl, "endpoint", e.value, e.line);
       // Sync - if endpoint looks like a file, add it to files tab too
       if (isInterestingFile(e.value)) {
@@ -1073,6 +1177,36 @@ function extractEndpointsWithLines(content) {
     if (e.value.includes("hooks.slack.com") || e.value.includes("discord.com/api/webhooks")) return false;
     return filterUrl(e.value);
   });
+}
+
+function extractApiCallsWithLines(content, baseUrl) {
+  const found = [];
+  const patterns = [
+    /\bfetch\s*\(\s*["'`]([^"'`]+)["'`]/gi,
+    /\baxios\.(?:get|post|put|patch|delete|request)\s*\(\s*["'`]([^"'`]+)["'`]/gi,
+    /\b(?:get|post|put|patch|delete)\s*\(\s*["'`](\/[^"'`]+)["'`]/gi,
+    /\.open\s*\(\s*["'`](GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)["'`]\s*,\s*["'`]([^"'`]+)["'`]/gi,
+    /\$\.ajax\s*\(\s*\{[^}]*url\s*:\s*["'`]([^"'`]+)["'`]/gis
+  ];
+
+  patterns.forEach(pattern => {
+    let match;
+    while ((match = pattern.exec(content)) !== null) {
+      const raw = match[2] || match[1];
+      if (!raw || raw.includes("${")) continue;
+      try {
+        const value = normalizeUrl(new URL(raw, baseUrl).href);
+        if (filterUrl(value)) {
+          found.push({
+            value,
+            line: getLineNumber(content, match.index)
+          });
+        }
+      } catch { }
+    }
+  });
+
+  return found;
 }
 
 function extractSecretsWithLines(content) {
@@ -1928,6 +2062,91 @@ function analyzeClientStorage(body) {
   return hits;
 }
 
+function analyzeCloudAndBucketSignals(body) {
+  const signals = [];
+  const patterns = [
+    { label: "Firebase Config", regex: /firebaseConfig|apiKey\s*:\s*["']AIza|authDomain\s*:\s*["'][^"']+firebaseapp\.com/gi },
+    { label: "Supabase URL", regex: /https:\/\/[a-z0-9-]+\.supabase\.co/gi },
+    { label: "S3 URL", regex: /https?:\/\/(?:[a-z0-9.-]+\.)?s3[.-][a-z0-9-]+\.amazonaws\.com\/[^\s"'<>]+|https?:\/\/s3\.amazonaws\.com\/[^\s"'<>]+/gi },
+    { label: "CloudFront", regex: /https?:\/\/[a-z0-9-]+\.cloudfront\.net\/[^\s"'<>]*/gi },
+    { label: "Google Storage", regex: /https?:\/\/storage\.googleapis\.com\/[^\s"'<>]+|gs:\/\/[^\s"'<>]+/gi },
+    { label: "Azure Blob", regex: /https?:\/\/[a-z0-9-]+\.blob\.core\.windows\.net\/[^\s"'<>]+/gi }
+  ];
+
+  patterns.forEach(({ label, regex }) => {
+    let match;
+    while ((match = regex.exec(body)) !== null && signals.length < 60) {
+      signals.push({
+        label,
+        value: match[0].slice(0, 220)
+      });
+    }
+  });
+
+  renderReconCard("Cloud Config & Bucket Signals", "fas fa-cloud", [
+    ["Signals", signals.length ? signals.slice(0, 30).map(item => `<div class="recon-list-item">${badge(item.label, "warn")} ${codeValue(item.value, { limit: 180 })}</div>`).join("") : badge("none", "good")]
+  ], signals.length ? "warn" : "good");
+
+  return signals;
+}
+
+function renderAuthSurfaceMap(urls, baseUrl) {
+  const origin = new URL(baseUrl).origin;
+  const buckets = {
+    Login: /login|signin|sign-in|session/,
+    Register: /register|signup|sign-up/,
+    Password: /password|reset|forgot|recover/,
+    OAuth: /oauth|sso|saml|oidc|callback/,
+    Token: /token|jwt|jwks|refresh/,
+    MFA: /mfa|2fa|otp|totp/,
+    Logout: /logout|signout/
+  };
+  const mapped = {};
+  Object.keys(buckets).forEach(key => mapped[key] = []);
+
+  [...new Set(urls)].forEach(url => {
+    try {
+      const parsed = new URL(url, origin);
+      const haystack = `${parsed.pathname} ${parsed.search}`.toLowerCase();
+      Object.entries(buckets).forEach(([label, pattern]) => {
+        if (pattern.test(haystack) && mapped[label].length < 12) mapped[label].push(parsed.href);
+      });
+    } catch { }
+  });
+
+  const total = Object.values(mapped).reduce((sum, list) => sum + list.length, 0);
+  renderReconCard("Auth Surface Mapper", "fas fa-user-lock", [
+    ["Mapped", total ? badge(`${total} auth URLs`, "warn") : badge("none", "good")],
+    ...Object.entries(mapped).map(([label, list]) => [
+      label,
+      list.length ? list.map(url => urlLine(url)).join("") : badge("none", "good")
+    ])
+  ], total ? "warn" : "good");
+
+  return mapped;
+}
+
+function renderResponseDiffSummary(endpointChecks) {
+  const groups = {};
+  endpointChecks.forEach(item => {
+    const key = `${item.status}:${item.length}`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(item.url);
+  });
+
+  const repeated = Object.entries(groups)
+    .filter(([, urls]) => urls.length > 1)
+    .sort((a, b) => b[1].length - a[1].length)
+    .slice(0, 12);
+
+  renderReconCard("Response Diff Helper", "fas fa-not-equal", [
+    ["Repeated Pages", repeated.length ? repeated.map(([key, urls]) => `<div class="recon-list-item">${badge(key, "info")} ${badge(`${urls.length} URLs`, "warn")}${urls.slice(0, 4).map(url => urlLine(url)).join("")}</div>`).join("") : badge("none", "good")],
+    ["Use", badge("same status+length groups can reveal WAF or shared error pages", "info")]
+  ], repeated.length ? "info" : "good");
+
+  return repeated;
+}
+
 async function checkGraphqlEndpoints(baseUrl) {
   const origin = new URL(baseUrl).origin;
   const candidates = ["/graphql", "/api/graphql", "/v1/graphql", "/graphql/v1", "/graphiql", "/playground", "/__graphql"]
@@ -2003,15 +2222,17 @@ async function findSourceMaps(baseUrl, html) {
       const text = await res.text();
       if (res.ok && (/json|source-map/i.test(contentType) || /"sources"\s*:\s*\[/.test(text))) {
         let sourceCount = 0;
+        let sources = [];
         try {
           const parsed = JSON.parse(text);
+          sources = Array.isArray(parsed.sources) ? parsed.sources.slice(0, 12) : [];
           sourceCount = Array.isArray(parsed.sources) ? parsed.sources.length : 0;
         } catch { }
         const endpoints = extractEndpointsWithLines(text).slice(0, 80).map(item => {
           try { return new URL(item.value, baseUrl).href; } catch { return item.value; }
         });
         const secrets = extractSecretsWithLines(text).slice(0, 20);
-        found.push({ url: candidate, length: text.length, sourceCount, endpoints, secrets });
+        found.push({ url: candidate, length: text.length, sourceCount, sources, endpoints, secrets });
       }
     } catch { }
   }
@@ -2019,7 +2240,7 @@ async function findSourceMaps(baseUrl, html) {
   renderReconCard("Source Maps", "fas fa-map", [
     ["Checked", badge(`${limited.length} candidates`, "info")],
     ["Found", found.length ? found.map(item =>
-      `<div class="recon-list-item">${urlLine(item.url)} ${badge(`${item.length} bytes`, "warn")} ${badge(`${item.sourceCount} sources`, "info")} ${badge(`${item.endpoints.length} endpoints`, item.endpoints.length ? "warn" : "good")} ${item.secrets.length ? badge(`${item.secrets.length} secrets`, "bad") : ""}</div>`
+      `<div class="recon-list-item">${urlLine(item.url)} ${badge(`${item.length} bytes`, "warn")} ${badge(`${item.sourceCount} sources`, "info")} ${badge(`${item.endpoints.length} endpoints`, item.endpoints.length ? "warn" : "good")} ${item.secrets.length ? badge(`${item.secrets.length} secrets`, "bad") : ""}${item.sources.length ? `<details class="recon-details"><summary>Show source files</summary><pre>${escapeHtml(item.sources.join("\n"))}</pre></details>` : ""}</div>`
     ).join("") : badge("none", "good")]
   ], found.length ? "warn" : "good");
 
@@ -2136,6 +2357,7 @@ startReconBtn.onclick = async () => {
     setReconStatus("Decoding JWT and storage signals...");
     const jwtTokens = analyzeJwtTokens(body);
     const storageSignals = analyzeClientStorage(body);
+    const cloudSignals = analyzeCloudAndBucketSignals(body);
 
     setReconProgress(80);
     setReconStatus("Checking GraphQL surfaces...");
@@ -2150,11 +2372,14 @@ startReconBtn.onclick = async () => {
     setReconProgress(92);
     setReconStatus("Generating endpoint method hints...");
     const methodHints = renderMethodHints(allEndpointUrls, url);
+    const authSurface = renderAuthSurfaceMap(allEndpointUrls, url);
 
     setReconProgress(95);
     setReconStatus("Live-checking endpoints...");
     const endpointChecks = await liveCheckEndpoints(allEndpointUrls, url);
     const liveInteresting = endpointChecks.filter(item => [200, 201, 202, 204, 301, 302, 307, 308, 401, 403].includes(item.status));
+    const responseDiffs = renderResponseDiffSummary(endpointChecks);
+    const authSurfaceCount = Object.values(authSurface).reduce((sum, list) => sum + list.length, 0);
 
     renderReconSummary([
       { label: "Missing Headers", value: headers.missing.length, tone: headers.missing.length ? "bad" : "good", note: headers.missing.length ? "review" : "clean" },
@@ -2165,7 +2390,10 @@ startReconBtn.onclick = async () => {
       { label: "JWTs", value: jwtTokens.length, tone: jwtTokens.length ? "warn" : "good", note: jwtTokens.length ? "decoded" : "none" },
       { label: "Risky Params", value: riskyParams.length, tone: riskyParams.length ? "warn" : "good", note: riskyParams.length ? "test manually" : "none" },
       { label: "Storage Signals", value: storageSignals.length, tone: storageSignals.length ? "warn" : "good", note: storageSignals.length ? "inspect" : "none" },
+      { label: "Cloud/Buckets", value: cloudSignals.length, tone: cloudSignals.length ? "warn" : "good", note: cloudSignals.length ? "inspect" : "none" },
+      { label: "Auth URLs", value: authSurfaceCount, tone: authSurfaceCount ? "warn" : "good", note: authSurfaceCount ? "mapped" : "none" },
       { label: "Method Hints", value: methodHints.length, tone: methodHints.length ? "info" : "good", note: "heuristic" },
+      { label: "Diff Groups", value: responseDiffs.length, tone: responseDiffs.length ? "info" : "good", note: "same length" },
       { label: "Live URLs", value: liveInteresting.length, tone: liveInteresting.length ? "info" : "good", note: "reachable" },
       { label: "Tech Hits", value: tech.length, tone: tech.length ? "info" : "warn", note: tech.length ? "fingerprinted" : "unknown" },
       { label: "Signals", value: signals.length, tone: signals.length ? "warn" : "good", note: signals.length ? "inspect" : "none" }
@@ -2319,6 +2547,7 @@ document.getElementById("filterInput").oninput = (e) => {
 // Advanced Exports
 const exportCsv = document.getElementById("exportCsv");
 const exportMd = document.getElementById("exportMd");
+const exportBugReport = document.getElementById("exportBugReport");
 
 exportCsv.onclick = () => {
   const csv = "Source,Line,Severity,Type,Value,Hunt Hint\n" + state.allData.map(d => `"${d.source}",${d.line},"${d.severity || "low"}","${d.type}","${d.value.replace(/"/g, '""')}","${(d.hint || "").replace(/"/g, '""')}"`).join("\n");
@@ -2349,6 +2578,35 @@ exportMd.onclick = () => {
 exportTxt.onclick = () => {
   const content = state.allData.map(d => `[${(d.severity || "low").toUpperCase()}] [L${d.line}] [${d.type}] ${d.value} (Source: ${d.source})\nHint: ${d.hint || "Review manually."}`).join("\n\n");
   downloadFile("web-x-sider-endpoints.txt", content, "text/plain");
+};
+
+exportBugReport.onclick = () => {
+  const sorted = [...state.allData]
+    .sort((a, b) => (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0))
+    .slice(0, 30);
+
+  let report = "# Web X Sider Bug Bounty Triage Report\n\n";
+  report += `Generated: ${new Date().toISOString()}\n\n`;
+  report += "## Summary\n\n";
+  ["critical", "high", "medium", "low"].forEach(level => {
+    report += `- ${level.toUpperCase()}: ${state.allData.filter(item => (item.severity || "low") === level).length}\n`;
+  });
+  report += "\n## Top Findings\n\n";
+
+  sorted.forEach((item, index) => {
+    report += `### ${index + 1}. ${String(item.severity || "low").toUpperCase()} ${item.type}\n\n`;
+    report += `- **Target/source:** ${item.source}\n`;
+    report += `- **Line:** ${item.line}\n`;
+    report += `- **Evidence:** \`${String(item.value).replace(/`/g, "\\`")}\`\n`;
+    report += `- **Why it matters:** ${item.hint || "Review manually."}\n`;
+    report += "- **Suggested validation:** Reproduce only on authorized scope, confirm access control/impact, capture minimal evidence, and avoid destructive actions.\n\n";
+  });
+
+  if (!sorted.length) {
+    report += "No findings were collected in this scan.\n";
+  }
+
+  downloadFile("web-x-sider-bugbounty-report.md", report, "text/markdown");
 };
 
 exportJson.onclick = () => {

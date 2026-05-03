@@ -1052,6 +1052,34 @@ body {
   color: var(--accent-orange);
 }
 
+.advanced-scan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.advanced-scan-field {
+  position: relative;
+}
+
+.advanced-scan-field textarea {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+  padding: 14px 18px 14px 48px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.92rem;
+  outline: none;
+}
+
+.advanced-scan-field textarea::placeholder {
+  color: var(--text-muted);
+}
+
 /* ==================== FILTER SECTION ==================== */
 .filter-section {
   padding: var(--space-lg);
@@ -1157,6 +1185,67 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
+}
+
+.priority-dashboard {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.priority-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.priority-card h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  font-size: 0.86rem;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.priority-count {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--primary-light);
+}
+
+.priority-card ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.priority-card li {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+  word-break: break-all;
+  margin-top: 6px;
+}
+
+.priority-critical {
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.priority-high {
+  border-color: rgba(249, 115, 22, 0.35);
+}
+
+.priority-medium {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.priority-low {
+  border-color: rgba(59, 130, 246, 0.28);
 }
 
 .card {
@@ -1390,7 +1479,7 @@ body {
 /* Export Buttons Grid */
 .export-buttons {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: var(--space-md);
 }
 
@@ -1981,6 +2070,11 @@ body {
 
   .dashboard-stats {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .advanced-scan-grid,
+  .priority-dashboard {
+    grid-template-columns: 1fr;
   }
 
   .input-group {

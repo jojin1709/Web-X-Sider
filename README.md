@@ -41,6 +41,11 @@ Web X Sider V2.0 is a massive evolution, transforming from a simple scraper into
 - **Bug Bounty Recon Suite**: One-click checks for security headers, CORS origin reflection, exposed source maps, endpoint liveness, risky parameters, tech fingerprints, and interesting response signals.
 - **Recon Discovery Modules**: Real target-derived robots.txt/sitemap parsing, OpenAPI/Swagger parsing, GraphQL surface checks, JWT decoding, and client storage token-signal detection.
 - **Custom Wordlist Prober**: Add your own paths to the built-in sensitive path checks without fake/demo data.
+- **Scope Manager & URL Import**: Keep scans inside authorized scope and import URLs from tools like `gau`, `waybackurls`, `katana`, and `hakrawler`.
+- **Priority Dashboard**: Automatically groups real findings into Critical, High, Medium, and Low buckets.
+- **Bug Bounty Report Export**: Generates a triage-style Markdown report with evidence, severity, and validation notes.
+- **API Call Parser**: Extracts real API calls from `fetch`, `axios`, `XMLHttpRequest`, and jQuery AJAX usage.
+- **Cloud/Bucket & Auth Mapping**: Flags real Firebase/Supabase/bucket signals and groups auth-related URLs.
 - **Parameter Discovery**: Dedicated extraction and grouping of URL parameters to identify potential injection points.
 - **Recursive Discovery Engine**: Full website crawling capability (Depth 1) with deep script analysis to find hidden routes.
 - **Precision Secret Detection**: High-fidelity regex for **20+ patterns** including AWS, Google Cloud, Stripe, Slack/Discord Webhooks, and JWT.
@@ -73,6 +78,12 @@ It extracts data from external JS files, inline scripts, and HTML source code - 
 | 📘 **OpenAPI/Swagger Parser** | Parses live API specs and adds discovered endpoints to recon.                                    |
 | 🧬 **JWT & Storage Signals** | Decodes detected JWTs and flags real token/storage usage patterns in client code.                  |
 | 🔺 **GraphQL Checks** | Checks common GraphQL surfaces for real response signatures.                                            |
+| 🧱 **Scope Manager** | Restricts crawling to authorized domains/subdomains.                                                     |
+| 🕰️ **Wayback/Gau Import** | Imports external URL lists and scans only in-scope URLs.                                           |
+| 🚦 **Priority Dashboard** | Groups findings by real risk signals: Critical, High, Medium, Low.                                  |
+| 🧾 **Bug Bounty Report** | Exports a triage report with evidence, impact hints, and validation notes.                          |
+| ☁️ **Cloud/Bucket Signals** | Detects Firebase, Supabase, S3, CloudFront, GCS, and Azure Blob URLs in fetched source.            |
+| 🔐 **Auth Surface Mapper** | Groups real discovered login, OAuth, token, password reset, MFA, and logout URLs.                  |
 | 🎯 **Result Filtering** | Instantly sort findings into Endpoints, Secrets, and Files with a global filter.                     |
 | 📄 **Advanced Export**  | Export to `.txt`, `.json`, `.csv`, and professional `.md` reports.                                   |
 | ✅ **100% Client-Side** | No backend, no data leakage - privacy-focused by design.                                             |
@@ -112,10 +123,12 @@ Opening `index.html` directly, or serving with plain `python -m http.server`, ca
 
 1. Visit **[https://jojin1709.github.io/Web-X-Sider/](https://jojin1709.github.io/Web-X-Sider/)**
 2. Enter a target URL (e.g., `https://example.com`).
-3. Click **Scan Page** for a quick analysis or **Full Scan** for recursive domain discovery.
-4. Monitor the **Dashboard** to see live extractions of Endpoints, Parameters, Secrets, and Files.
-5. Use the **Category Tabs** to filter results and the **Global Search** for specific keywords.
-6. **Export** your findings in `.txt`, `.json`, `.csv`, or `.md` formats.
+3. Optionally add scope domains and imported URLs from `gau`, `waybackurls`, `katana`, or `hakrawler`.
+4. Click **Scan Page** for a quick analysis or **Full Scan** for recursive domain discovery.
+5. Monitor the **Dashboard** to see live extractions of Endpoints, Parameters, Secrets, and Files.
+6. Review the **Priority Dashboard** for Critical/High/Medium/Low grouping.
+7. Use the **Category Tabs** to filter results and the **Global Search** for specific keywords.
+8. **Export** your findings in `.txt`, `.json`, `.csv`, `.md`, or bug bounty report format.
 
 ### 🛡️ Sensitive Path Prober
 
@@ -144,6 +157,9 @@ The Recon Suite runs only live checks against the target and parsed target conte
 - GraphQL endpoint response checks
 - Source map discovery with endpoint/secret extraction
 - Endpoint liveness checks
+- Cloud bucket/config signals
+- Auth surface mapping
+- Response status/length grouping
 
 ---
 

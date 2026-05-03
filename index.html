@@ -257,6 +257,19 @@
           </div>
         </div>
 
+        <div class="advanced-scan-grid">
+          <div class="advanced-scan-field glass-input">
+            <i class="fas fa-shield-halved input-icon"></i>
+            <textarea id="scopeInput" rows="3"
+              placeholder="Optional scope: one domain per line, e.g. example.com or *.example.com"></textarea>
+          </div>
+          <div class="advanced-scan-field glass-input">
+            <i class="fas fa-clock-rotate-left input-icon"></i>
+            <textarea id="importedUrlInput" rows="3"
+              placeholder="Optional URL import from gau, waybackurls, katana, hakrawler, one URL per line"></textarea>
+          </div>
+        </div>
+
         <div id="progress-container" class="progress-container" style="display: none;">
           <div class="progress-bar-wrapper">
             <div class="progress-bar-bg">
@@ -304,6 +317,7 @@
 
       <!-- Results Container -->
       <main id="results-container" class="results-container">
+        <section id="priority-dashboard" class="priority-dashboard glass-card" style="display: none;"></section>
         <div id="results-all" class="tab-content active">
           <div id="results" class="results-grid"></div>
         </div>
@@ -343,6 +357,11 @@
             <i class="fab fa-markdown"></i>
             <span class="export-format">.md</span>
             <span class="export-desc">Markdown</span>
+          </button>
+          <button id="exportBugReport" class="export-btn" title="Export as bug bounty triage report">
+            <i class="fas fa-clipboard-list"></i>
+            <span class="export-format">Report</span>
+            <span class="export-desc">Bug Bounty</span>
           </button>
         </div>
       </section>
@@ -529,7 +548,7 @@
     </footer>
   </div>
 
-  <script src="script.js?v=20260503-tools1"></script>
+  <script src="script.js?v=20260503-tools2"></script>
   <script>
     // Light deterrent only: browser source can still be inspected by determined users.
     document.addEventListener('contextmenu', function (event) {
