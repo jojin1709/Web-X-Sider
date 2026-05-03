@@ -457,6 +457,12 @@
           </div>
         </div>
 
+        <div id="custom-prober-panel" class="custom-prober-panel glass-input">
+          <i class="fas fa-list-check input-icon"></i>
+          <textarea id="customPathInput" rows="4"
+            placeholder="Optional custom paths, one per line: /admin, /.env, /api/docs"></textarea>
+        </div>
+
         <div id="prober-results" class="prober-results-list" style="display: none;">
           <!-- Prober lines will be rendered here -->
         </div>
@@ -523,7 +529,7 @@
     </footer>
   </div>
 
-  <script src="script.js?v=20260503-risk1"></script>
+  <script src="script.js?v=20260503-tools1"></script>
   <script>
     // Light deterrent only: browser source can still be inspected by determined users.
     document.addEventListener('contextmenu', function (event) {

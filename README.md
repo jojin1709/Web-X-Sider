@@ -39,6 +39,8 @@ Web X Sider V2.0 is a massive evolution, transforming from a simple scraper into
 
 - **Sensitive Path Prober**: Automated checks for **500+ critical paths** including `.env`, `.git/config`, `phpinfo.php`, backups, and cloud configurations. Features live response length filtering, instantaneous stop controls, and one-click inspection for 200/403 responses.
 - **Bug Bounty Recon Suite**: One-click checks for security headers, CORS origin reflection, exposed source maps, endpoint liveness, risky parameters, tech fingerprints, and interesting response signals.
+- **Recon Discovery Modules**: Real target-derived robots.txt/sitemap parsing, OpenAPI/Swagger parsing, GraphQL surface checks, JWT decoding, and client storage token-signal detection.
+- **Custom Wordlist Prober**: Add your own paths to the built-in sensitive path checks without fake/demo data.
 - **Parameter Discovery**: Dedicated extraction and grouping of URL parameters to identify potential injection points.
 - **Recursive Discovery Engine**: Full website crawling capability (Depth 1) with deep script analysis to find hidden routes.
 - **Precision Secret Detection**: High-fidelity regex for **20+ patterns** including AWS, Google Cloud, Stripe, Slack/Discord Webhooks, and JWT.
@@ -67,6 +69,10 @@ It extracts data from external JS files, inline scripts, and HTML source code - 
 | 🕷️ **Recursive Scan**   | Depth-limited (v2.0: Depth 1) crawling of internal links.                                            |
 | 📊 **Real-time Stats**  | Live dashboard tracking Scanned URLs, Endpoints, Secrets, and Files.                                 |
 | 🛡️ **Path Prober**      | Manual check for 500+ paths with response lengths, live filtering, and stop controls.                |
+| 🧭 **Robots/Sitemap Parser** | Extracts real paths and URLs from target robots.txt and sitemap files.                           |
+| 📘 **OpenAPI/Swagger Parser** | Parses live API specs and adds discovered endpoints to recon.                                    |
+| 🧬 **JWT & Storage Signals** | Decodes detected JWTs and flags real token/storage usage patterns in client code.                  |
+| 🔺 **GraphQL Checks** | Checks common GraphQL surfaces for real response signatures.                                            |
 | 🎯 **Result Filtering** | Instantly sort findings into Endpoints, Secrets, and Files with a global filter.                     |
 | 📄 **Advanced Export**  | Export to `.txt`, `.json`, `.csv`, and professional `.md` reports.                                   |
 | ✅ **100% Client-Side** | No backend, no data leakage - privacy-focused by design.                                             |
@@ -116,10 +122,28 @@ Opening `index.html` directly, or serving with plain `python -m http.server`, ca
 1. Switch to the **Sensitive Path Prober** tab from the header menu.
 2. Enter the target domain (e.g., `https://example.com`).
 3. Click **Check Paths** to start probing **500+ critical paths** (e.g., `.env`, `.git`, `phpinfo.php`).
-4. Watch the **Progress Bar** and live **Status Counters** (200, 403, 404).
-5. Use the **Status Filters** (Found, Forbidden, Missing) to analyze the detected paths live.
-6. **Advanced Filtering**: Use the **Include/Exclude Lengths** inputs to filter out standard WAF block pages by their byte size (e.g., exclude `127, 403`).
-7. 🔗 Use the **OPEN🔗** buttons to instantly verify 200 and 403 leaks in a new tab.
+4. Optionally paste custom paths into the custom wordlist box.
+5. Watch the **Progress Bar** and live **Status Counters** (200, 403, 404).
+6. Use the **Status Filters** (Found, Forbidden, Missing) to analyze the detected paths live.
+7. **Advanced Filtering**: Use the **Include/Exclude Lengths** inputs to filter out standard WAF block pages by their byte size (e.g., exclude `127, 403`).
+8. 🔗 Use the **OPEN🔗** buttons to instantly verify 200 and 403 leaks in a new tab.
+
+### Bug Bounty Recon Suite
+
+The Recon Suite runs only live checks against the target and parsed target content:
+
+- Security headers and weak header signals
+- CORS origin reflection checks
+- Technology fingerprinting
+- robots.txt and sitemap URL discovery
+- OpenAPI/Swagger endpoint parsing
+- Risky parameter grouping
+- Response signal detection
+- JWT decoding
+- Client storage/token usage detection
+- GraphQL endpoint response checks
+- Source map discovery with endpoint/secret extraction
+- Endpoint liveness checks
 
 ---
 

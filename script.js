@@ -1216,10 +1216,22 @@ const proberFilterSection = document.getElementById("prober-filter-section");
 const proberLengthFilters = document.getElementById("prober-length-filters");
 const proberIncludeLength = document.getElementById("proberIncludeLength");
 const proberExcludeLength = document.getElementById("proberExcludeLength");
+const customProberPanel = document.getElementById("custom-prober-panel");
+const customPathInput = document.getElementById("customPathInput");
 
 let proberData = []; // v2.0: Store results for filtering
 let activeProberFilter = "all";
 let isProberStopped = false;
+
+function parseCustomPaths(raw) {
+  return String(raw || "")
+    .split(/\r?\n|,/)
+    .map(path => path.trim())
+    .filter(Boolean)
+    .filter(path => !/^https?:\/\//i.test(path))
+    .map(path => path.startsWith("/") ? path : `/${path}`)
+    .filter(path => path.length <= 180 && !/[\s<>]/.test(path));
+}
 
 probeBtn.onclick = async () => {
   let url = proberUrlInput.value.trim();
@@ -1234,6 +1246,7 @@ probeBtn.onclick = async () => {
     proberProgressContainer.style.display = "block";
     proberFilterSection.style.display = "flex"; // v2.0: Enable live filtering during scan
     proberLengthFilters.style.display = "flex"; // Show length filters
+    customProberPanel.style.display = "block";
     proberProgressBar.style.width = "0%";
     const probPercentEl = document.getElementById("prober-progress-percent");
     if (probPercentEl) probPercentEl.innerText = "0%";
@@ -1251,10 +1264,12 @@ probeBtn.onclick = async () => {
     isProberStopped = false;
 
     let completed = 0;
-    const total = sensitivePaths.length;
+    const customPaths = parseCustomPaths(customPathInput.value);
+    const pathsToProbe = [...new Set([...sensitivePaths, ...customPaths])];
+    const total = pathsToProbe.length;
     let gotAnyProbeResponse = false;
 
-    for (const path of sensitivePaths) {
+    for (const path of pathsToProbe) {
       if (isProberStopped) {
         proberStatus.innerText = `Probing stopped manually.`;
         break;
@@ -1708,6 +1723,263 @@ function findInterestingSignals(body) {
   return hits;
 }
 
+function sameOriginUrl(path, baseUrl) {
+  const origin = new URL(baseUrl).origin;
+  return new URL(path, origin).href;
+}
+
+function extractSitemapLocs(xmlText) {
+  try {
+    const doc = new DOMParser().parseFromString(xmlText, "text/xml");
+    return [...doc.querySelectorAll("loc")]
+      .map(node => node.textContent.trim())
+      .filter(url => /^https?:\/\//i.test(url));
+  } catch {
+    return [];
+  }
+}
+
+async function discoverRobotsAndSitemaps(baseUrl) {
+  const origin = new URL(baseUrl).origin;
+  const robots = { found: false, paths: [], sitemaps: [] };
+  const sitemapUrls = new Set([sameOriginUrl("/sitemap.xml", baseUrl), sameOriginUrl("/sitemap_index.xml", baseUrl)]);
+  const discoveredUrls = new Set();
+
+  try {
+    const res = await fetchTarget(sameOriginUrl("/robots.txt", baseUrl));
+    const text = await res.text();
+    if (res.ok && text.trim()) {
+      robots.found = true;
+      text.split(/\r?\n/).forEach(line => {
+        const trimmed = line.trim();
+        const sitemapMatch = trimmed.match(/^sitemap:\s*(.+)$/i);
+        const pathMatch = trimmed.match(/^(?:allow|disallow):\s*(\/[^\s#]*)/i);
+        if (sitemapMatch && /^https?:\/\//i.test(sitemapMatch[1].trim())) {
+          sitemapUrls.add(sitemapMatch[1].trim());
+          robots.sitemaps.push(sitemapMatch[1].trim());
+        }
+        if (pathMatch && pathMatch[1] !== "/") {
+          robots.paths.push(pathMatch[1]);
+          discoveredUrls.add(sameOriginUrl(pathMatch[1], baseUrl));
+        }
+      });
+    }
+  } catch { }
+
+  const sitemapHits = [];
+  for (const sitemapUrl of [...sitemapUrls].slice(0, 8)) {
+    if (isReconStopped) break;
+    try {
+      const res = await fetchTarget(sitemapUrl);
+      const text = await res.text();
+      if (!res.ok || !text.trim()) continue;
+      const locs = extractSitemapLocs(text);
+      locs.forEach(url => {
+        try {
+          const parsed = new URL(url);
+          if (parsed.hostname === new URL(origin).hostname) discoveredUrls.add(normalizeUrl(url));
+          if (/\.xml(?:$|\?)/i.test(parsed.pathname)) sitemapUrls.add(url);
+        } catch { }
+      });
+      sitemapHits.push({ url: sitemapUrl, count: locs.length });
+    } catch { }
+  }
+
+  const urls = [...discoveredUrls].slice(0, 120);
+  renderReconCard("Robots & Sitemap Discovery", "fas fa-sitemap", [
+    ["robots.txt", robots.found ? badge("found", "info") : badge("not found", "good")],
+    ["Robots Paths", robots.paths.length ? robots.paths.slice(0, 35).map(path => badge(path, "warn")).join("") : badge("none", "good")],
+    ["Sitemaps", sitemapHits.length ? sitemapHits.map(item => `<div class="recon-list-item">${urlLine(item.url)} ${badge(`${item.count} locs`, "info")}</div>`).join("") : badge("none parsed", "good")],
+    ["URLs Added", urls.length ? badge(`${urls.length} URLs`, "info") : badge("none", "good")]
+  ], urls.length || robots.paths.length ? "info" : "good");
+
+  return urls;
+}
+
+function extractOpenApiPaths(text, contentType = "") {
+  const endpoints = new Set();
+  if (/json/i.test(contentType) || /^[\s\r\n]*[{[]/.test(text)) {
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && parsed.paths && typeof parsed.paths === "object") {
+        Object.keys(parsed.paths).forEach(path => {
+          if (path.startsWith("/")) endpoints.add(path);
+        });
+      }
+      return [...endpoints];
+    } catch { }
+  }
+
+  text.split(/\r?\n/).forEach(line => {
+    const match = line.match(/^\s{0,6}(\/[A-Za-z0-9_~./{}:-]+)\s*:/);
+    if (match) endpoints.add(match[1]);
+  });
+  return [...endpoints];
+}
+
+async function findOpenApiSpecs(baseUrl, html) {
+  const origin = new URL(baseUrl).origin;
+  const candidates = new Set([
+    "/swagger.json", "/swagger.yaml", "/openapi.json", "/openapi.yaml",
+    "/api/swagger.json", "/api/openapi.json", "/api-docs", "/v2/api-docs", "/v3/api-docs",
+    "/docs/swagger.json", "/docs/openapi.json"
+  ].map(path => origin + path));
+
+  (html.match(/https?:\/\/[^"'<>\s]*(?:swagger|openapi|api-docs)[^"'<>\s]*/gi) || [])
+    .forEach(url => candidates.add(url.replace(/[),.;\]]+$/, "")));
+  (html.match(/["'](\/[^"']*(?:swagger|openapi|api-docs)[^"']*)["']/gi) || [])
+    .forEach(raw => {
+      const cleaned = raw.slice(1, -1);
+      try { candidates.add(new URL(cleaned, origin).href); } catch { }
+    });
+
+  const specs = [];
+  const endpointUrls = new Set();
+  for (const candidate of [...candidates].slice(0, 18)) {
+    if (isReconStopped) break;
+    try {
+      const res = await fetchTarget(candidate);
+      const text = await res.text();
+      const paths = res.ok ? extractOpenApiPaths(text.slice(0, 1200000), getHeader(res.headers, "content-type")) : [];
+      if (paths.length) {
+        paths.slice(0, 120).forEach(path => endpointUrls.add(new URL(path, origin).href));
+        specs.push({ url: candidate, status: res.status, paths: paths.length });
+      }
+    } catch { }
+  }
+
+  renderReconCard("OpenAPI & Swagger Parser", "fas fa-book-open", [
+    ["Checked", badge(`${Math.min(candidates.size, 18)} candidates`, "info")],
+    ["Specs Found", specs.length ? specs.map(item => `<div class="recon-list-item">${badge(item.status, "good")} ${badge(`${item.paths} paths`, "warn")}${urlLine(item.url)}</div>`).join("") : badge("none", "good")],
+    ["Endpoints Added", endpointUrls.size ? badge(`${endpointUrls.size} endpoints`, "info") : badge("none", "good")]
+  ], specs.length ? "warn" : "good");
+
+  return [...endpointUrls];
+}
+
+function decodeBase64UrlJson(part) {
+  try {
+    const padded = part.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(part.length / 4) * 4, "=");
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
+function analyzeJwtTokens(body) {
+  const tokens = [...new Set((body.match(/\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]+\b/g) || []))].slice(0, 20);
+  const decoded = tokens
+    .map(token => {
+      const [head, payload] = token.split(".");
+      const header = decodeBase64UrlJson(head);
+      const claims = decodeBase64UrlJson(payload);
+      if (!header || !claims) return null;
+      const exp = Number(claims.exp);
+      return {
+        alg: header.alg || "unknown",
+        typ: header.typ || "JWT",
+        iss: claims.iss || "",
+        sub: claims.sub || "",
+        aud: Array.isArray(claims.aud) ? claims.aud.join(", ") : (claims.aud || ""),
+        exp: Number.isFinite(exp) ? new Date(exp * 1000).toISOString() : ""
+      };
+    })
+    .filter(Boolean);
+
+  renderReconCard("JWT Decoder", "fas fa-id-card", [
+    ["Tokens", tokens.length ? badge(`${tokens.length} found`, "warn") : badge("none", "good")],
+    ["Decoded", decoded.length ? decoded.map(item => `
+      <div class="recon-list-item">
+        ${badge(`alg ${item.alg}`, item.alg.toLowerCase() === "none" ? "bad" : "info")}
+        ${badge(item.typ, "info")}
+        ${item.exp ? `<span class="recon-code">exp ${escapeHtml(item.exp)}</span>` : ""}
+        ${item.iss ? `<div>iss ${codeValue(item.iss, { limit: 80 })}</div>` : ""}
+        ${item.sub ? `<div>sub ${codeValue(item.sub, { limit: 80 })}</div>` : ""}
+        ${item.aud ? `<div>aud ${codeValue(item.aud, { limit: 80 })}</div>` : ""}
+      </div>
+    `).join("") : badge("none decoded", tokens.length ? "warn" : "good")]
+  ], tokens.length ? "warn" : "good");
+
+  return decoded;
+}
+
+function analyzeClientStorage(body) {
+  const patterns = [
+    { label: "localStorage", regex: /localStorage\.(?:getItem|setItem|removeItem)|localStorage\s*\[/gi },
+    { label: "sessionStorage", regex: /sessionStorage\.(?:getItem|setItem|removeItem)|sessionStorage\s*\[/gi },
+    { label: "document.cookie", regex: /document\.cookie/gi },
+    { label: "Bearer/Auth Token", regex: /\b(?:bearer|authorization|access_token|refresh_token|id_token|csrf|xsrf)\b/gi }
+  ];
+  const hits = [];
+  patterns.forEach(({ label, regex }) => {
+    let match;
+    while ((match = regex.exec(body)) !== null && hits.length < 40) {
+      hits.push({
+        label,
+        snippet: body.slice(Math.max(0, match.index - 55), Math.min(body.length, match.index + 115)).replace(/\s+/g, " ").trim()
+      });
+    }
+  });
+
+  renderReconCard("Client Storage & Token Usage", "fas fa-box-archive", [
+    ["Signals", hits.length ? hits.slice(0, 20).map(item => `<div class="recon-list-item">${badge(item.label, "warn")} ${codeValue(item.snippet, { limit: 180 })}</div>`).join("") : badge("none", "good")]
+  ], hits.length ? "warn" : "good");
+
+  return hits;
+}
+
+async function checkGraphqlEndpoints(baseUrl) {
+  const origin = new URL(baseUrl).origin;
+  const candidates = ["/graphql", "/api/graphql", "/v1/graphql", "/graphql/v1", "/graphiql", "/playground", "/__graphql"]
+    .map(path => origin + path);
+  const hits = [];
+
+  for (const endpoint of candidates) {
+    if (isReconStopped) break;
+    try {
+      const probeUrl = endpoint.includes("?") ? endpoint : `${endpoint}?query=${encodeURIComponent("{__typename}")}`;
+      const res = await fetchTarget(probeUrl);
+      const text = await res.text();
+      const signature = /"data"\s*:|"errors"\s*:|graphql|cannot query field|must provide query|graphiql|playground/i.test(text);
+      if ([200, 400, 401, 403, 405].includes(res.status) && signature) {
+        hits.push({ url: endpoint, status: res.status, length: text.length });
+      }
+    } catch { }
+  }
+
+  renderReconCard("GraphQL Surface Check", "fas fa-diagram-project", [
+    ["Checked", badge(`${candidates.length} endpoints`, "info")],
+    ["Signals", hits.length ? hits.map(item => `<div class="recon-list-item">${badge(item.status, item.status === 200 ? "warn" : "info")} <span class="recon-code">[${escapeHtml(item.length)}]</span>${urlLine(item.url)}</div>`).join("") : badge("none", "good")]
+  ], hits.length ? "warn" : "good");
+
+  return hits;
+}
+
+function renderMethodHints(urls, baseUrl) {
+  const origin = new URL(baseUrl).origin;
+  const hints = [...new Set(urls)].map(url => {
+    try {
+      const parsed = new URL(url, origin);
+      const path = parsed.pathname.toLowerCase();
+      let method = "";
+      if (/\/(?:delete|remove|destroy|disable|revoke|logout)/.test(path)) method = "DELETE/POST";
+      else if (/\/(?:update|edit|patch|change|reset)/.test(path)) method = "PUT/PATCH";
+      else if (/\/(?:create|add|upload|import|login|register|token|checkout|payment)/.test(path)) method = "POST";
+      else if (/\/(?:export|download|report|search|list|users|accounts)/.test(path)) method = "GET";
+      return method ? { url: parsed.href, method } : null;
+    } catch {
+      return null;
+    }
+  }).filter(Boolean).slice(0, 40);
+
+  renderReconCard("Endpoint Method Hints", "fas fa-route", [
+    ["Heuristic", badge("based only on real discovered URLs", "info")],
+    ["Hints", hints.length ? hints.map(item => `<div class="recon-list-item">${badge(item.method, "info")}${urlLine(item.url)}</div>`).join("") : badge("none", "good")]
+  ], hints.length ? "info" : "good");
+
+  return hints;
+}
+
 async function findSourceMaps(baseUrl, html) {
   const candidates = new Set();
   const scripts = extractScriptUrls(html, baseUrl);
@@ -1730,7 +2002,16 @@ async function findSourceMaps(baseUrl, html) {
       const contentType = getHeader(res.headers, "content-type");
       const text = await res.text();
       if (res.ok && (/json|source-map/i.test(contentType) || /"sources"\s*:\s*\[/.test(text))) {
-        found.push({ url: candidate, length: text.length });
+        let sourceCount = 0;
+        try {
+          const parsed = JSON.parse(text);
+          sourceCount = Array.isArray(parsed.sources) ? parsed.sources.length : 0;
+        } catch { }
+        const endpoints = extractEndpointsWithLines(text).slice(0, 80).map(item => {
+          try { return new URL(item.value, baseUrl).href; } catch { return item.value; }
+        });
+        const secrets = extractSecretsWithLines(text).slice(0, 20);
+        found.push({ url: candidate, length: text.length, sourceCount, endpoints, secrets });
       }
     } catch { }
   }
@@ -1738,7 +2019,7 @@ async function findSourceMaps(baseUrl, html) {
   renderReconCard("Source Maps", "fas fa-map", [
     ["Checked", badge(`${limited.length} candidates`, "info")],
     ["Found", found.length ? found.map(item =>
-      `<div class="recon-list-item">${urlLine(item.url)} ${badge(`${item.length} bytes`, "warn")}</div>`
+      `<div class="recon-list-item">${urlLine(item.url)} ${badge(`${item.length} bytes`, "warn")} ${badge(`${item.sourceCount} sources`, "info")} ${badge(`${item.endpoints.length} endpoints`, item.endpoints.length ? "warn" : "good")} ${item.secrets.length ? badge(`${item.secrets.length} secrets`, "bad") : ""}</div>`
     ).join("") : badge("none", "good")]
   ], found.length ? "warn" : "good");
 
@@ -1820,32 +2101,57 @@ startReconBtn.onclick = async () => {
       })
       .filter(Boolean);
 
-    const allEndpointUrls = [...new Set([...importedUrls, ...extractedEndpoints])];
-    setReconProgress(18);
+    let allEndpointUrls = [...new Set([...importedUrls, ...extractedEndpoints])];
+    setReconProgress(12);
     setReconStatus("Analyzing headers...");
     const headers = analyzeSecurityHeaders(res);
 
-    setReconProgress(32);
+    setReconProgress(22);
     setReconStatus("Checking CORS...");
     const cors = await analyzeCors(url);
 
-    setReconProgress(48);
+    setReconProgress(32);
     setReconStatus("Fingerprinting tech...");
     const tech = detectTech(url, res, body);
+
+    setReconProgress(40);
+    setReconStatus("Parsing robots and sitemaps...");
+    const discoveryUrls = await discoverRobotsAndSitemaps(url);
+    allEndpointUrls = [...new Set([...allEndpointUrls, ...discoveryUrls])];
+
+    setReconProgress(50);
+    setReconStatus("Parsing OpenAPI and Swagger specs...");
+    const openApiUrls = await findOpenApiSpecs(url, body);
+    allEndpointUrls = [...new Set([...allEndpointUrls, ...openApiUrls])];
 
     setReconProgress(60);
     setReconStatus("Finding risky parameters...");
     const riskyParams = findRiskyParameters(allEndpointUrls);
 
-    setReconProgress(72);
+    setReconProgress(68);
     setReconStatus("Checking response signals...");
     const signals = findInterestingSignals(body);
 
-    setReconProgress(84);
+    setReconProgress(74);
+    setReconStatus("Decoding JWT and storage signals...");
+    const jwtTokens = analyzeJwtTokens(body);
+    const storageSignals = analyzeClientStorage(body);
+
+    setReconProgress(80);
+    setReconStatus("Checking GraphQL surfaces...");
+    const graphqlHits = await checkGraphqlEndpoints(url);
+
+    setReconProgress(86);
     setReconStatus("Looking for source maps...");
     const maps = await findSourceMaps(url, body);
+    const mapEndpoints = maps.flatMap(item => item.endpoints || []);
+    allEndpointUrls = [...new Set([...allEndpointUrls, ...mapEndpoints])];
 
     setReconProgress(92);
+    setReconStatus("Generating endpoint method hints...");
+    const methodHints = renderMethodHints(allEndpointUrls, url);
+
+    setReconProgress(95);
     setReconStatus("Live-checking endpoints...");
     const endpointChecks = await liveCheckEndpoints(allEndpointUrls, url);
     const liveInteresting = endpointChecks.filter(item => [200, 201, 202, 204, 301, 302, 307, 308, 401, 403].includes(item.status));
@@ -1854,7 +2160,12 @@ startReconBtn.onclick = async () => {
       { label: "Missing Headers", value: headers.missing.length, tone: headers.missing.length ? "bad" : "good", note: headers.missing.length ? "review" : "clean" },
       { label: "CORS Risks", value: cors.length, tone: cors.length ? "bad" : "good", note: cors.length ? "possible issue" : "none" },
       { label: "Source Maps", value: maps.length, tone: maps.length ? "warn" : "good", note: maps.length ? "exposed" : "none" },
+      { label: "OpenAPI Paths", value: openApiUrls.length, tone: openApiUrls.length ? "warn" : "good", note: openApiUrls.length ? "parsed" : "none" },
+      { label: "GraphQL", value: graphqlHits.length, tone: graphqlHits.length ? "warn" : "good", note: graphqlHits.length ? "signals" : "none" },
+      { label: "JWTs", value: jwtTokens.length, tone: jwtTokens.length ? "warn" : "good", note: jwtTokens.length ? "decoded" : "none" },
       { label: "Risky Params", value: riskyParams.length, tone: riskyParams.length ? "warn" : "good", note: riskyParams.length ? "test manually" : "none" },
+      { label: "Storage Signals", value: storageSignals.length, tone: storageSignals.length ? "warn" : "good", note: storageSignals.length ? "inspect" : "none" },
+      { label: "Method Hints", value: methodHints.length, tone: methodHints.length ? "info" : "good", note: "heuristic" },
       { label: "Live URLs", value: liveInteresting.length, tone: liveInteresting.length ? "info" : "good", note: "reachable" },
       { label: "Tech Hits", value: tech.length, tone: tech.length ? "info" : "warn", note: tech.length ? "fingerprinted" : "unknown" },
       { label: "Signals", value: signals.length, tone: signals.length ? "warn" : "good", note: signals.length ? "inspect" : "none" }

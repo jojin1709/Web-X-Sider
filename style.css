@@ -1504,6 +1504,28 @@ body {
   min-width: 200px;
 }
 
+.custom-prober-panel {
+  position: relative;
+  margin-top: var(--space-md);
+}
+
+.custom-prober-panel textarea {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  padding: 14px 18px 14px 48px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.custom-prober-panel textarea::placeholder {
+  color: var(--text-muted);
+}
+
 .prober-results-list {
   margin-top: var(--space-lg);
   background: var(--glass-bg);
