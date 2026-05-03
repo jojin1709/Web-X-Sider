@@ -828,11 +828,76 @@ const updateStats = () => {
   document.getElementById("stat-parameters").innerText = state.parameters.size;
 };
 
+const severityRank = {
+  critical: 4,
+  high: 3,
+  medium: 2,
+  low: 1
+};
+
+function classifyFinding(type, value) {
+  const raw = String(value || "");
+  const lowered = raw.toLowerCase();
+
+  if (type === "secret") {
+    if (/private key|aws key|stripe live|github pat|cloudflare|slack webhook|discord webhook|google oauth2/i.test(raw)) {
+      return { severity: "critical", hint: "Validate key scope, ownership, and real impact; rotate only through the program owner." };
+    }
+    if (/jwt|mongodb|postgresql|mysql|facebook secret|segment/i.test(raw)) {
+      return { severity: "high", hint: "Check whether the token/URI is active, privileged, or exposes user or system data." };
+    }
+    return { severity: "medium", hint: "Review manually for exposed credentials or sensitive configuration." };
+  }
+
+  if (type === "file") {
+    if (/\/(?:\.env|\.git\/config|\.git\/head|id_rsa|privatekey|server\.key|credentials|service-account|firebase-adminsdk|config\/master\.key)(?:$|[?#/])/i.test(lowered)) {
+      return { severity: "critical", hint: "Potential direct secret/source disclosure. Verify status, content length, and readable evidence." };
+    }
+    if (/\.(?:sql|bak|backup|zip|tar|gz|7z|rar)(?:$|[?#])/i.test(lowered) || /\/(?:backup|backups|dump|database|wp-config|phpinfo|swagger|openapi|api-docs)/i.test(lowered)) {
+      return { severity: "high", hint: "Check for backup, config, docs, or database exposure with sensitive content." };
+    }
+    if (/\.(?:map|json|xml|yml|yaml|config|log|txt)(?:$|[?#])/i.test(lowered)) {
+      return { severity: "medium", hint: "Inspect for internal endpoints, stack traces, source paths, or environment data." };
+    }
+  }
+
+  if (type === "parameter") {
+    try {
+      const parsed = new URL(raw, "https://placeholder.local");
+      const names = [...parsed.searchParams.keys()].map(name => name.toLowerCase());
+      if (names.some(name => /^(url|uri|redirect|redirect_uri|return|returnurl|next|callback|continue|dest|destination|target|to)$/.test(name))) {
+        return { severity: "high", hint: "Test open redirect, SSRF-style fetches, OAuth redirect abuse, and allowlist bypasses." };
+      }
+      if (names.some(name => /^(file|path|template|page|view|include|download|document|folder)$/.test(name))) {
+        return { severity: "high", hint: "Test LFI/path traversal and unauthorized file download behavior." };
+      }
+      if (names.some(name => /^(id|user|userid|user_id|account|accountid|account_id|org|orgid|tenant|tenantid|role)$/.test(name))) {
+        return { severity: "medium", hint: "Test IDOR/BOLA by changing identifiers between authorized accounts." };
+      }
+      if (names.some(name => /^(q|query|search|s|keyword|callback|jsonp|debug|test)$/.test(name))) {
+        return { severity: "medium", hint: "Test injection, reflected input, debug behavior, and cache poisoning edge cases." };
+      }
+    } catch { }
+  }
+
+  if (type === "endpoint") {
+    if (/\/(?:admin|internal|debug|actuator\/env|actuator\/heapdump|graphql|graphiql|playground|oauth\/token|token|jwks|api\/admin)(?:$|[/?#])/i.test(lowered)) {
+      return { severity: "high", hint: "Prioritize auth bypass, info disclosure, GraphQL introspection, and sensitive admin behavior." };
+    }
+    if (/\/(?:api|v1|v2|v3|auth|login|users|account|billing|payment|invoice|upload|download|export)(?:$|[/?#])/i.test(lowered)) {
+      return { severity: "medium", hint: "Map authz, IDOR/BOLA, upload/download controls, and rate-limit behavior." };
+    }
+  }
+
+  return { severity: "low", hint: "Low signal by itself; keep for mapping and chaining with other findings." };
+}
+
 const addResult = (source, type, value, line = 0) => {
   // Deduplicate same value at same line in same source ONLY if type is also the same
   if (state.allData.some(d => d.source === source && d.value === value && d.line === line && d.type === type)) return;
 
-  state.allData.push({ source, type, value, line });
+  const risk = classifyFinding(type, value);
+  state.allData.push({ source, type, value, line, ...risk });
   if (type === "endpoint") state.endpoints.add(value);
   if (type === "secret") state.secrets.add(value);
   if (type === "file") state.files.add(value);
@@ -1861,16 +1926,43 @@ function renderResults(filter = "", category = "all") {
     card.appendChild(title);
 
     const list = document.createElement("ol");
-    items.forEach(item => {
+    items
+      .sort((a, b) => (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0))
+      .forEach(item => {
       const li = document.createElement("li");
 
       const lineSpan = document.createElement("span");
       lineSpan.className = "line-number";
       lineSpan.innerText = `[L${item.line}]`;
 
+      const detail = document.createElement("div");
+      detail.className = "finding-detail";
+
+      const meta = document.createElement("div");
+      meta.className = "finding-meta";
+
+      const severity = document.createElement("span");
+      severity.className = `severity-badge severity-${item.severity || "low"}`;
+      severity.innerText = (item.severity || "low").toUpperCase();
+
+      const typeBadge = document.createElement("span");
+      typeBadge.className = "finding-type";
+      typeBadge.innerText = item.type;
+
+      meta.appendChild(severity);
+      meta.appendChild(typeBadge);
+
       const span = document.createElement("span");
       span.className = `endpoint-text ${item.type === 'secret' ? 'secret-item' : ''}`;
       span.innerText = item.value;
+
+      const hint = document.createElement("span");
+      hint.className = "finding-hint";
+      hint.innerText = item.hint || "";
+
+      detail.appendChild(meta);
+      detail.appendChild(span);
+      detail.appendChild(hint);
 
       const copyBtn = document.createElement("button");
       copyBtn.className = "copy-btn";
@@ -1878,7 +1970,7 @@ function renderResults(filter = "", category = "all") {
       copyBtn.onclick = () => copyToClipboard(item.value, copyBtn);
 
       li.appendChild(lineSpan);
-      li.appendChild(span);
+      li.appendChild(detail);
       li.appendChild(copyBtn);
       list.appendChild(li);
     });
@@ -1918,7 +2010,7 @@ const exportCsv = document.getElementById("exportCsv");
 const exportMd = document.getElementById("exportMd");
 
 exportCsv.onclick = () => {
-  const csv = "Source,Line,Type,Value\n" + state.allData.map(d => `"${d.source}",${d.line},"${d.type}","${d.value.replace(/"/g, '""')}"`).join("\n");
+  const csv = "Source,Line,Severity,Type,Value,Hunt Hint\n" + state.allData.map(d => `"${d.source}",${d.line},"${d.severity || "low"}","${d.type}","${d.value.replace(/"/g, '""')}","${(d.hint || "").replace(/"/g, '""')}"`).join("\n");
   downloadFile("web-x-sider-results.csv", csv, "text/csv");
 };
 
@@ -1935,14 +2027,16 @@ exportMd.onclick = () => {
 
   for (const [src, items] of Object.entries(grouped)) {
     md += `### ${src}\n`;
-    items.forEach(it => md += `- [L${it.line}] [${it.type}] ${it.value}\n`);
+    items
+      .sort((a, b) => (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0))
+      .forEach(it => md += `- [${(it.severity || "low").toUpperCase()}] [L${it.line}] [${it.type}] ${it.value}\n  - Hunt hint: ${it.hint || "Review manually."}\n`);
     md += "\n";
   }
   downloadFile("web-x-sider-report.md", md, "text/markdown");
 };
 
 exportTxt.onclick = () => {
-  const content = state.allData.map(d => `[L${d.line}] [${d.type}] ${d.value} (Source: ${d.source})`).join("\n");
+  const content = state.allData.map(d => `[${(d.severity || "low").toUpperCase()}] [L${d.line}] [${d.type}] ${d.value} (Source: ${d.source})\nHint: ${d.hint || "Review manually."}`).join("\n\n");
   downloadFile("web-x-sider-endpoints.txt", content, "text/plain");
 };
 
