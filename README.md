@@ -10,7 +10,9 @@
 
 **Built for recon - Fast, lightweight and 100% client-side.**
 
-[![Built with](https://img.shields.io/badge/Built%20with-HTML%20%7C%20CSS%20%7C%20JavaScript-blue?style=for-the-badge&logo=javascript)](https://iamshafayat.github.io/Web-X-Sider/)  
+[![Built with](https://img.shields.io/badge/Built%20with-HTML%20%7C%20CSS%20%7C%20JavaScript-blue?style=for-the-badge&logo=javascript)](https://jojin1709.github.io/Web-X-Sider/)  
+[![GitHub](https://img.shields.io/badge/GitHub-jojin1709%2FWeb--X--Sider-181717?style=for-the-badge&logo=github)](https://github.com/jojin1709/Web-X-Sider)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Jojin%20John-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/jojin-john-74386b34a/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
 
 </div>
@@ -20,7 +22,12 @@
 ## 🌐 Live
 
 👉 Try Web X Sider V2.0 now:  
-**[https://jojin1709.github.io/Web-X-Sider)**
+**[https://jojin1709.github.io/Web-X-Sider/](https://jojin1709.github.io/Web-X-Sider/)**
+
+## Links
+
+- **GitHub:** [https://github.com/jojin1709/Web-X-Sider](https://github.com/jojin1709/Web-X-Sider)
+- **LinkedIn:** [https://www.linkedin.com/in/jojin-john-74386b34a/](https://www.linkedin.com/in/jojin-john-74386b34a/)
 
 ---
 
@@ -97,7 +104,7 @@ Opening `index.html` directly, or serving with plain `python -m http.server`, ca
 
 ### 🕷️ Smart Crawler
 
-1. Visit **[https://iamshafayat.github.io/Web-X-Sider/](https://iamshafayat.github.io/Web-X-Sider/)**
+1. Visit **[https://jojin1709.github.io/Web-X-Sider/](https://jojin1709.github.io/Web-X-Sider/)**
 2. Enter a target URL (e.g., `https://example.com`).
 3. Click **Scan Page** for a quick analysis or **Full Scan** for recursive domain discovery.
 4. Monitor the **Dashboard** to see live extractions of Endpoints, Parameters, Secrets, and Files.
