@@ -48,7 +48,7 @@
   }
   </script>
 
-  <link rel="stylesheet" href="style.css?v=20260503-navfix1" />
+  <link rel="stylesheet" href="style.css?v=20260503-workflow1" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -260,13 +260,17 @@
         <div class="advanced-scan-grid">
           <div class="advanced-scan-field glass-input">
             <i class="fas fa-shield-halved input-icon"></i>
+            <label for="scopeInput">Scope Guard</label>
             <textarea id="scopeInput" rows="3"
-              placeholder="Optional scope: one domain per line, e.g. example.com or *.example.com"></textarea>
+              placeholder="example.com&#10;*.example.com"></textarea>
+            <div id="scopeStatus" class="field-status">Scope is optional. Empty means current target only.</div>
           </div>
           <div class="advanced-scan-field glass-input">
             <i class="fas fa-clock-rotate-left input-icon"></i>
+            <label for="importedUrlInput">Imported URLs</label>
             <textarea id="importedUrlInput" rows="3"
-              placeholder="Optional URL import from gau, waybackurls, katana, hakrawler, one URL per line"></textarea>
+              placeholder="Paste gau, waybackurls, katana, or hakrawler URLs here"></textarea>
+            <div id="importStatus" class="field-status">0 imported URLs detected.</div>
           </div>
         </div>
 
@@ -312,6 +316,13 @@
             <i class="fas fa-folder"></i>
             <span>Files</span>
           </button>
+        </div>
+        <div class="severity-tabs responsive-tabs" id="severity-filter-section">
+          <button class="severity-filter active" data-severity-filter="all">All Risk</button>
+          <button class="severity-filter severity-critical" data-severity-filter="critical">Critical</button>
+          <button class="severity-filter severity-high" data-severity-filter="high">High</button>
+          <button class="severity-filter severity-medium" data-severity-filter="medium">Medium</button>
+          <button class="severity-filter severity-low" data-severity-filter="low">Low</button>
         </div>
       </section>
 
@@ -478,8 +489,18 @@
 
         <div id="custom-prober-panel" class="custom-prober-panel glass-input">
           <i class="fas fa-list-check input-icon"></i>
+          <label for="customPathInput">Custom Prober Paths</label>
           <textarea id="customPathInput" rows="4"
-            placeholder="Optional custom paths, one per line: /admin, /.env, /api/docs"></textarea>
+            placeholder="/admin&#10;/.env&#10;/api/docs"></textarea>
+          <div class="prober-presets">
+            <button type="button" class="preset-btn" data-preset="admin">Admin</button>
+            <button type="button" class="preset-btn" data-preset="api">API Docs</button>
+            <button type="button" class="preset-btn" data-preset="cloud">Cloud</button>
+            <button type="button" class="preset-btn" data-preset="backup">Backup</button>
+            <button type="button" class="preset-btn" data-preset="wordpress">WordPress</button>
+            <button type="button" class="preset-btn" data-preset="spring">Spring Boot</button>
+            <button type="button" class="preset-btn" data-preset="laravel">Laravel</button>
+          </div>
         </div>
 
         <div id="prober-results" class="prober-results-list" style="display: none;">
@@ -548,7 +569,7 @@
     </footer>
   </div>
 
-  <script src="script.js?v=20260503-tools2"></script>
+  <script src="script.js?v=20260503-workflow1"></script>
   <script>
     // Light deterrent only: browser source can still be inspected by determined users.
     document.addEventListener('contextmenu', function (event) {

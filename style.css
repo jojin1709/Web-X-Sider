@@ -1071,13 +1071,26 @@ body {
 
 .advanced-scan-field {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 12px 48px;
+}
+
+.advanced-scan-field label,
+.custom-prober-panel label {
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0;
 }
 
 .advanced-scan-field textarea {
   width: 100%;
   min-height: 96px;
   resize: vertical;
-  padding: 14px 18px 14px 48px;
+  padding: 0;
   background: transparent;
   border: none;
   color: var(--text-primary);
@@ -1088,6 +1101,17 @@ body {
 
 .advanced-scan-field textarea::placeholder {
   color: var(--text-muted);
+}
+
+.field-status {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.advanced-scan-field .input-icon,
+.custom-prober-panel .input-icon {
+  top: 28px;
 }
 
 /* ==================== FILTER SECTION ==================== */
@@ -1134,7 +1158,16 @@ body {
   flex-wrap: wrap;
 }
 
-.tab-btn {
+.severity-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.tab-btn,
+.severity-filter,
+.preset-btn {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -1150,12 +1183,15 @@ body {
   transition: var(--transition);
 }
 
-.tab-btn:hover {
+.tab-btn:hover,
+.severity-filter:hover,
+.preset-btn:hover {
   background: var(--glass-bg-light);
   color: var(--text-primary);
 }
 
-.tab-btn.active {
+.tab-btn.active,
+.severity-filter.active {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: white;
   border-color: transparent;
@@ -1606,13 +1642,17 @@ body {
 .custom-prober-panel {
   position: relative;
   margin-top: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 14px 48px;
 }
 
 .custom-prober-panel textarea {
   width: 100%;
   min-height: 110px;
   resize: vertical;
-  padding: 14px 18px 14px 48px;
+  padding: 0;
   background: transparent;
   border: none;
   color: var(--text-primary);
@@ -1623,6 +1663,51 @@ body {
 
 .custom-prober-panel textarea::placeholder {
   color: var(--text-muted);
+}
+
+.prober-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.preset-btn {
+  padding: 7px 11px;
+  font-size: 0.75rem;
+}
+
+.finding-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.finding-action-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: var(--transition);
+}
+
+.finding-action-btn:hover {
+  color: white;
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+
+.finding-note {
+  font-size: 0.78rem;
+  color: var(--accent-cyan);
+  line-height: 1.45;
 }
 
 .prober-results-list {

@@ -8,6 +8,8 @@ const exportJson = document.getElementById("exportJson");
 const scopeInput = document.getElementById("scopeInput");
 const importedUrlInput = document.getElementById("importedUrlInput");
 const priorityDashboard = document.getElementById("priority-dashboard");
+const scopeStatus = document.getElementById("scopeStatus");
+const importStatus = document.getElementById("importStatus");
 
 const allResults = [];
 const scannedJs = new Set(); // avoid duplicate scans across sources
@@ -821,7 +823,10 @@ const state = {
   isScanning: false,
   isCrawlerStopped: false,
   fetchFailures: [],
-  scopeRules: []
+  scopeRules: [],
+  hiddenFindings: new Set(),
+  findingNotes: {},
+  activeSeverityFilter: "all"
 };
 
 const updateStats = () => {
@@ -936,6 +941,34 @@ function parseImportedUrls(raw, baseUrl) {
   return [...urls];
 }
 
+function getFindingKey(item) {
+  return `${item.source}|${item.line}|${item.type}|${item.value}`;
+}
+
+function getVisibleFindings() {
+  return state.allData.filter(item => !state.hiddenFindings.has(getFindingKey(item)));
+}
+
+function updateInputPreviews() {
+  const scopeRules = parseScopeRules(scopeInput?.value || "");
+  if (scopeStatus) {
+    scopeStatus.innerText = scopeRules.length
+      ? `${scopeRules.length} scope rule${scopeRules.length === 1 ? "" : "s"} active. Out-of-scope URLs will be skipped.`
+      : "Scope is optional. Empty means current target only.";
+  }
+
+  if (importStatus) {
+    try {
+      const baseUrl = urlInput.value.trim() || "https://example.com";
+      const normalizedBase = /^https?:\/\//i.test(baseUrl) ? baseUrl : `https://${baseUrl}`;
+      const imported = parseImportedUrls(importedUrlInput?.value || "", normalizedBase);
+      importStatus.innerText = `${imported.length} imported URL${imported.length === 1 ? "" : "s"} detected.`;
+    } catch {
+      importStatus.innerText = "Enter a target URL to preview imported URL count.";
+    }
+  }
+}
+
 const addResult = (source, type, value, line = 0) => {
   // Deduplicate same value at same line in same source ONLY if type is also the same
   if (state.allData.some(d => d.source === source && d.value === value && d.line === line && d.type === type)) return;
@@ -952,7 +985,7 @@ const addResult = (source, type, value, line = 0) => {
 function renderPriorityDashboard() {
   if (!priorityDashboard) return;
   const groups = { critical: [], high: [], medium: [], low: [] };
-  state.allData.forEach(item => {
+  getVisibleFindings().forEach(item => {
     const severity = item.severity || "low";
     if (groups[severity]) groups[severity].push(item);
   });
@@ -976,7 +1009,7 @@ function renderPriorityDashboard() {
       </div>
     `;
   }).join("");
-  priorityDashboard.style.display = state.allData.length ? "grid" : "none";
+  priorityDashboard.style.display = getVisibleFindings().length ? "grid" : "none";
 }
 
 const setProgress = (percent) => {
@@ -1005,6 +1038,12 @@ const startScan = async (maxDepth) => {
   state.allData = [];
   state.scannedUrls.clear();
   state.fetchFailures = [];
+  state.hiddenFindings.clear();
+  state.findingNotes = {};
+  state.activeSeverityFilter = "all";
+  document.querySelectorAll("[data-severity-filter]").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.severityFilter === "all");
+  });
   scannedJs.clear(); // Reset JS scan cache
   updateStats();
   renderPriorityDashboard();
@@ -1531,6 +1570,25 @@ proberExcludeLength.addEventListener('input', () => filterProberResults());
 // Prober Filter Click Event
 document.querySelectorAll("#prober-filter-section .tab-btn").forEach(btn => {
   btn.onclick = () => filterProberResults(btn.getAttribute("data-prober-filter"));
+});
+
+const proberPresetPaths = {
+  admin: ["/admin", "/admin/login", "/administrator", "/dashboard", "/manage", "/console"],
+  api: ["/swagger.json", "/openapi.json", "/api-docs", "/v3/api-docs", "/swagger-ui.html", "/graphql"],
+  cloud: ["/.aws/credentials", "/.aws/config", "/service-account-key.json", "/firebase-config.json", "/.env"],
+  backup: ["/backup.zip", "/backup.sql", "/database.sql", "/dump.sql", "/site.tar.gz", "/www.zip"],
+  wordpress: ["/wp-config.php", "/wp-admin/", "/wp-json/wp/v2/users", "/xmlrpc.php", "/wp-content/debug.log"],
+  spring: ["/actuator", "/actuator/env", "/actuator/heapdump", "/actuator/mappings", "/actuator/configprops"],
+  laravel: ["/.env", "/storage/logs/laravel.log", "/telescope", "/horizon/dashboard", "/vendor/composer/installed.json"]
+};
+
+document.querySelectorAll(".preset-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const preset = btn.dataset.preset;
+    const existing = parseCustomPaths(customPathInput.value);
+    const merged = [...new Set([...existing, ...(proberPresetPaths[preset] || [])])];
+    customPathInput.value = merged.join("\n");
+  });
 });
 
 function renderProberLine(path, status, fullUrl, length) {
@@ -2443,8 +2501,9 @@ function renderResults(filter = "", category = "all") {
   results.innerHTML = "";
   const grouped = {};
 
-  state.allData.forEach(item => {
+  getVisibleFindings().forEach(item => {
     if (category !== "all" && item.type !== category.slice(0, -1)) return;
+    if (state.activeSeverityFilter !== "all" && (item.severity || "low") !== state.activeSeverityFilter) return;
     if (filter && !item.value.toLowerCase().includes(filter.toLowerCase())) return;
 
     if (!grouped[item.source]) grouped[item.source] = [];
@@ -2499,18 +2558,50 @@ function renderResults(filter = "", category = "all") {
       hint.className = "finding-hint";
       hint.innerText = item.hint || "";
 
+      const noteValue = state.findingNotes[getFindingKey(item)] || "";
+      const note = document.createElement("span");
+      note.className = "finding-note";
+      note.innerText = noteValue ? `Note: ${noteValue}` : "";
+
       detail.appendChild(meta);
       detail.appendChild(span);
       detail.appendChild(hint);
+      detail.appendChild(note);
+
+      const actions = document.createElement("div");
+      actions.className = "finding-actions";
+
+      const copyReportBtn = document.createElement("button");
+      copyReportBtn.className = "finding-action-btn";
+      copyReportBtn.title = "Copy as report finding";
+      copyReportBtn.innerHTML = '<i class="fas fa-clipboard-list"></i>';
+      copyReportBtn.onclick = () => copyReportFinding(item, copyReportBtn);
+
+      const noteBtn = document.createElement("button");
+      noteBtn.className = "finding-action-btn";
+      noteBtn.title = "Add note";
+      noteBtn.innerHTML = '<i class="fas fa-pen"></i>';
+      noteBtn.onclick = () => addFindingNote(item);
+
+      const hideBtn = document.createElement("button");
+      hideBtn.className = "finding-action-btn";
+      hideBtn.title = "Hide false positive";
+      hideBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+      hideBtn.onclick = () => hideFinding(item);
 
       const copyBtn = document.createElement("button");
       copyBtn.className = "copy-btn";
       copyBtn.innerHTML = "📋";
       copyBtn.onclick = () => copyToClipboard(item.value, copyBtn);
 
+      actions.appendChild(copyReportBtn);
+      actions.appendChild(noteBtn);
+      actions.appendChild(hideBtn);
+      actions.appendChild(copyBtn);
+
       li.appendChild(lineSpan);
       li.appendChild(detail);
-      li.appendChild(copyBtn);
+      li.appendChild(actions);
       list.appendChild(li);
     });
     card.appendChild(list);
@@ -2530,6 +2621,44 @@ async function copyToClipboard(text, btn) {
   } catch { }
 }
 
+function buildFindingReportText(item) {
+  const severity = String(item.severity || "low").toUpperCase();
+  const note = state.findingNotes[getFindingKey(item)] || "";
+  return [
+    `Title: ${severity} ${item.type} finding`,
+    `Severity: ${severity}`,
+    `Source: ${item.source}`,
+    `Line: ${item.line}`,
+    `Evidence: ${item.value}`,
+    `Why it matters: ${item.hint || "Review manually."}`,
+    note ? `Analyst note: ${note}` : "",
+    "Validation: Reproduce only on authorized scope, confirm impact, and capture minimal evidence."
+  ].filter(Boolean).join("\n");
+}
+
+function copyReportFinding(item, btn) {
+  copyToClipboard(buildFindingReportText(item), btn);
+}
+
+function addFindingNote(item) {
+  const key = getFindingKey(item);
+  const current = state.findingNotes[key] || "";
+  const note = prompt("Add a note for this finding:", current);
+  if (note === null) return;
+  const trimmed = note.trim();
+  if (trimmed) state.findingNotes[key] = trimmed;
+  else delete state.findingNotes[key];
+  const activeTab = document.querySelector("#crawler-section .tab-btn.active")?.dataset.tab || "all";
+  renderResults(document.getElementById("filterInput").value, activeTab);
+}
+
+function hideFinding(item) {
+  state.hiddenFindings.add(getFindingKey(item));
+  renderPriorityDashboard();
+  const activeTab = document.querySelector("#crawler-section .tab-btn.active")?.dataset.tab || "all";
+  renderResults(document.getElementById("filterInput").value, activeTab);
+}
+
 // Tabs & Filter Logic (Crawler Section)
 document.querySelectorAll("#crawler-section .tab-btn").forEach(btn => {
   btn.onclick = () => {
@@ -2540,9 +2669,25 @@ document.querySelectorAll("#crawler-section .tab-btn").forEach(btn => {
 });
 
 document.getElementById("filterInput").oninput = (e) => {
-  const activeTab = document.querySelector(".tab-btn.active").dataset.tab;
+  const activeTab = document.querySelector("#crawler-section .tab-btn.active").dataset.tab;
   renderResults(e.target.value, activeTab);
 };
+
+document.querySelectorAll("[data-severity-filter]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    state.activeSeverityFilter = btn.dataset.severityFilter || "all";
+    document.querySelectorAll("[data-severity-filter]").forEach(item => {
+      item.classList.toggle("active", item === btn);
+    });
+    const activeTab = document.querySelector("#crawler-section .tab-btn.active")?.dataset.tab || "all";
+    renderResults(document.getElementById("filterInput").value, activeTab);
+  });
+});
+
+scopeInput?.addEventListener("input", updateInputPreviews);
+importedUrlInput?.addEventListener("input", updateInputPreviews);
+urlInput?.addEventListener("input", updateInputPreviews);
+updateInputPreviews();
 
 // Advanced Exports
 const exportCsv = document.getElementById("exportCsv");
@@ -2550,7 +2695,7 @@ const exportMd = document.getElementById("exportMd");
 const exportBugReport = document.getElementById("exportBugReport");
 
 exportCsv.onclick = () => {
-  const csv = "Source,Line,Severity,Type,Value,Hunt Hint\n" + state.allData.map(d => `"${d.source}",${d.line},"${d.severity || "low"}","${d.type}","${d.value.replace(/"/g, '""')}","${(d.hint || "").replace(/"/g, '""')}"`).join("\n");
+  const csv = "Source,Line,Severity,Type,Value,Hunt Hint,Analyst Note\n" + getVisibleFindings().map(d => `"${d.source}",${d.line},"${d.severity || "low"}","${d.type}","${d.value.replace(/"/g, '""')}","${(d.hint || "").replace(/"/g, '""')}","${(state.findingNotes[getFindingKey(d)] || "").replace(/"/g, '""')}"`).join("\n");
   downloadFile("web-x-sider-results.csv", csv, "text/csv");
 };
 
@@ -2560,7 +2705,7 @@ exportMd.onclick = () => {
   md += `**Total Secrets:** ${state.secrets.size}\n\n`;
 
   const grouped = {};
-  state.allData.forEach(d => {
+  getVisibleFindings().forEach(d => {
     if (!grouped[d.source]) grouped[d.source] = [];
     grouped[d.source].push(d);
   });
@@ -2569,19 +2714,19 @@ exportMd.onclick = () => {
     md += `### ${src}\n`;
     items
       .sort((a, b) => (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0))
-      .forEach(it => md += `- [${(it.severity || "low").toUpperCase()}] [L${it.line}] [${it.type}] ${it.value}\n  - Hunt hint: ${it.hint || "Review manually."}\n`);
+      .forEach(it => md += `- [${(it.severity || "low").toUpperCase()}] [L${it.line}] [${it.type}] ${it.value}\n  - Hunt hint: ${it.hint || "Review manually."}${state.findingNotes[getFindingKey(it)] ? `\n  - Analyst note: ${state.findingNotes[getFindingKey(it)]}` : ""}\n`);
     md += "\n";
   }
   downloadFile("web-x-sider-report.md", md, "text/markdown");
 };
 
 exportTxt.onclick = () => {
-  const content = state.allData.map(d => `[${(d.severity || "low").toUpperCase()}] [L${d.line}] [${d.type}] ${d.value} (Source: ${d.source})\nHint: ${d.hint || "Review manually."}`).join("\n\n");
+  const content = getVisibleFindings().map(d => `[${(d.severity || "low").toUpperCase()}] [L${d.line}] [${d.type}] ${d.value} (Source: ${d.source})\nHint: ${d.hint || "Review manually."}${state.findingNotes[getFindingKey(d)] ? `\nNote: ${state.findingNotes[getFindingKey(d)]}` : ""}`).join("\n\n");
   downloadFile("web-x-sider-endpoints.txt", content, "text/plain");
 };
 
 exportBugReport.onclick = () => {
-  const sorted = [...state.allData]
+  const sorted = [...getVisibleFindings()]
     .sort((a, b) => (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0))
     .slice(0, 30);
 
@@ -2589,7 +2734,7 @@ exportBugReport.onclick = () => {
   report += `Generated: ${new Date().toISOString()}\n\n`;
   report += "## Summary\n\n";
   ["critical", "high", "medium", "low"].forEach(level => {
-    report += `- ${level.toUpperCase()}: ${state.allData.filter(item => (item.severity || "low") === level).length}\n`;
+    report += `- ${level.toUpperCase()}: ${getVisibleFindings().filter(item => (item.severity || "low") === level).length}\n`;
   });
   report += "\n## Top Findings\n\n";
 
@@ -2599,6 +2744,7 @@ exportBugReport.onclick = () => {
     report += `- **Line:** ${item.line}\n`;
     report += `- **Evidence:** \`${String(item.value).replace(/`/g, "\\`")}\`\n`;
     report += `- **Why it matters:** ${item.hint || "Review manually."}\n`;
+    if (state.findingNotes[getFindingKey(item)]) report += `- **Analyst note:** ${state.findingNotes[getFindingKey(item)]}\n`;
     report += "- **Suggested validation:** Reproduce only on authorized scope, confirm access control/impact, capture minimal evidence, and avoid destructive actions.\n\n";
   });
 
@@ -2610,7 +2756,10 @@ exportBugReport.onclick = () => {
 };
 
 exportJson.onclick = () => {
-  const json = JSON.stringify(state.allData, null, 2);
+  const json = JSON.stringify(getVisibleFindings().map(item => ({
+    ...item,
+    note: state.findingNotes[getFindingKey(item)] || ""
+  })), null, 2);
   downloadFile("web-x-sider-results.json", json, "application/json");
 };
 
