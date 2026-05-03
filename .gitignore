@@ -7,3 +7,10 @@ robots.txt
 server.py
 server.js
 cloudflare-worker-proxy.js
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
