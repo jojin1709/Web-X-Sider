@@ -1,4 +1,5 @@
-# 🕷️ Web X Sider V2.0 - Advanced JavaScript Crawler & Endpoint Discovery
+#  <img width="1254" height="1254" alt="favicon" src="https://github.com/user-attachments/assets/2e32121d-e68f-4561-82a1-8aef66bcbbf2" />
+Web X Sider V2.0 - Advanced JavaScript Crawler & Endpoint Discovery
 
 ---
 
