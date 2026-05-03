@@ -1849,6 +1849,7 @@ body {
   justify-content: center;
   align-items: center;
   gap: var(--space-sm);
+  flex-wrap: wrap;
   color: var(--text-muted);
   font-size: 0.85rem;
 }
