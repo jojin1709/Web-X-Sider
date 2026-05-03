@@ -20,7 +20,7 @@
 ## 🌐 Live
 
 👉 Try Web X Sider V2.0 now:  
-**[https://iamshafayat.github.io/Web-X-Sider/](https://iamshafayat.github.io/Web-X-Sider/)**
+**[https://jojin1709.github.io/Web-X-Sider)**
 
 ---
 
