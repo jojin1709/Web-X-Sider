@@ -708,18 +708,22 @@ async function fetchTarget(url, options = {}) {
         continue;
       }
 
-      if (candidate.viaProxy && (res.status === 502 || res.status === 504)) {
+      if (candidate.viaProxy && [403, 502, 504].includes(res.status)) {
         errors.push(`${candidate.label} returned ${res.status}`);
         continue;
       }
 
       return res;
     } catch (error) {
-      errors.push(`${candidate.label}: ${error.message}`);
+      const isCorsLikeProxyFailure = candidate.viaProxy && /failed to fetch|networkerror|load failed/i.test(error.message || "");
+      const hint = isCorsLikeProxyFailure
+        ? "proxy is blocked/offline or missing Access-Control-Allow-Origin"
+        : error.message;
+      errors.push(`${candidate.label}: ${hint}`);
     }
   }
 
-  throw new Error(`Unable to fetch ${url}. ${errors.join(" | ")}`);
+  throw new Error(`Unable to fetch ${url}. ${errors.join(" | ")}. Test proxy: ${REMOTE_PROXY_ENDPOINTS[0]}https%3A%2F%2Fexample.com`);
 }
 
 const endpointRegex = new RegExp(
