@@ -525,6 +525,24 @@
 
   <script src="script.js?v=20260503-risk1"></script>
   <script>
+    // Light deterrent only: browser source can still be inspected by determined users.
+    document.addEventListener('contextmenu', function (event) {
+      event.preventDefault();
+    });
+
+    document.addEventListener('keydown', function (event) {
+      const key = event.key.toLowerCase();
+      const blocked =
+        event.key === 'F12' ||
+        (event.ctrlKey && event.shiftKey && ['i', 'j', 'c'].includes(key)) ||
+        (event.ctrlKey && ['u', 's'].includes(key));
+
+      if (blocked) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    });
+
     // Mobile menu toggle
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileMenu = document.getElementById('mobileMenu');
