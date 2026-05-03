@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://iamshafayat.github.io/Web-X-Sider/sitemap.xml
