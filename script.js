@@ -10,6 +10,9 @@ const importedUrlInput = document.getElementById("importedUrlInput");
 const priorityDashboard = document.getElementById("priority-dashboard");
 const scopeStatus = document.getElementById("scopeStatus");
 const importStatus = document.getElementById("importStatus");
+const subdomainInput = document.getElementById("subdomainInput");
+const subdomainStatus = document.getElementById("subdomainStatus");
+const hostResultsSection = document.getElementById("host-results-section");
 
 const allResults = [];
 const scannedJs = new Set(); // avoid duplicate scans across sources
@@ -685,7 +688,7 @@ const getFetchCandidates = (url, proxyParams = {}) => {
 
   REMOTE_PROXY_ENDPOINTS.forEach(proxy => {
     candidates.push({
-      url: `${proxy}${encodedUrl}`,
+      url: `${proxy}${encodedUrl}${extraProxyQuery}`,
       label: "remote proxy",
       viaProxy: true,
       requiresProxyHeader: false
@@ -826,7 +829,8 @@ const state = {
   scopeRules: [],
   hiddenFindings: new Set(),
   findingNotes: {},
-  activeSeverityFilter: "all"
+  activeSeverityFilter: "all",
+  hostChecks: []
 };
 
 const updateStats = () => {
@@ -941,6 +945,59 @@ function parseImportedUrls(raw, baseUrl) {
   return [...urls];
 }
 
+function parseImportedHosts(raw) {
+  const hosts = new Set();
+  String(raw || "")
+    .split(/\r?\n|,|\s+/)
+    .map(item => item.trim())
+    .filter(Boolean)
+    .forEach(item => {
+      try {
+        const withScheme = /^https?:\/\//i.test(item) ? item : `https://${item}`;
+        const parsed = new URL(withScheme);
+        if (/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(parsed.hostname)) {
+          hosts.add(parsed.origin);
+        }
+      } catch { }
+    });
+  return [...hosts].slice(0, 150);
+}
+
+function extractTitle(html) {
+  const match = String(html || "").match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  return match ? match[1].replace(/\s+/g, " ").trim().slice(0, 160) : "";
+}
+
+function hashText(text) {
+  let hash = 0;
+  const input = String(text || "").slice(0, 50000);
+  for (let i = 0; i < input.length; i++) {
+    hash = ((hash << 5) - hash) + input.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(16);
+}
+
+function detectTechFromText(headers, body) {
+  const text = `${headers || ""} ${body || ""}`.slice(0, 200000);
+  const found = [];
+  [
+    ["Cloudflare", /cloudflare|cf-ray/i],
+    ["Next.js", /_next\/|x-nextjs/i],
+    ["React", /react|data-reactroot/i],
+    ["Vue", /vue(?:\.runtime)?\.|data-v-/i],
+    ["Angular", /ng-version|angular/i],
+    ["WordPress", /wp-content|wp-includes/i],
+    ["Laravel", /laravel_session|XSRF-TOKEN/i],
+    ["Firebase", /firebaseio|firebaseapp|firebaseConfig/i],
+    ["GraphQL", /graphql|apollo/i],
+    ["Swagger", /swagger-ui|openapi|api-docs/i]
+  ].forEach(([name, regex]) => {
+    if (regex.test(text)) found.push(name);
+  });
+  return found;
+}
+
 function getFindingKey(item) {
   return `${item.source}|${item.line}|${item.type}|${item.value}`;
 }
@@ -966,6 +1023,11 @@ function updateInputPreviews() {
     } catch {
       importStatus.innerText = "Enter a target URL to preview imported URL count.";
     }
+  }
+
+  if (subdomainStatus) {
+    const hosts = parseImportedHosts(subdomainInput?.value || "");
+    subdomainStatus.innerText = `${hosts.length} host${hosts.length === 1 ? "" : "s"} detected for live title/status checks.`;
   }
 }
 
@@ -1012,6 +1074,97 @@ function renderPriorityDashboard() {
   priorityDashboard.style.display = getVisibleFindings().length ? "grid" : "none";
 }
 
+function renderHostResults() {
+  if (!hostResultsSection) return;
+  if (!state.hostChecks.length) {
+    hostResultsSection.style.display = "none";
+    hostResultsSection.innerHTML = "";
+    return;
+  }
+
+  const rows = state.hostChecks.map(item => `
+    <div class="host-row">
+      <span class="recon-badge ${item.status >= 200 && item.status < 400 ? "good" : item.status >= 400 ? "warn" : "bad"}">${escapeHtml(item.status)}</span>
+      <div>
+        <div class="host-title">${escapeHtml(item.title || "No title")}</div>
+        <div class="host-url">${escapeHtml(item.url)}</div>
+      </div>
+      <div class="host-meta">${escapeHtml(item.length)} bytes</div>
+      <div class="host-meta">${escapeHtml((item.tech || []).join(", ") || "unknown")}</div>
+    </div>
+  `).join("");
+
+  const clusters = buildDuplicateClusters(state.hostChecks)
+    .slice(0, 6)
+    .map(group => `<div class="host-meta">${escapeHtml(group.key)} - ${group.items.length} hosts</div>`)
+    .join("");
+
+  hostResultsSection.innerHTML = `
+    <h3>Imported Host Live Check</h3>
+    <div class="host-grid">${rows}</div>
+    ${clusters ? `<h3 style="margin-top: var(--space-md);">Duplicate Response Clusters</h3>${clusters}` : ""}
+  `;
+  hostResultsSection.style.display = "block";
+}
+
+function buildDuplicateClusters(items) {
+  const groups = {};
+  items.forEach(item => {
+    const key = `${item.status}:${item.length}:${(item.title || "no-title").toLowerCase()}:${item.hash || "no-hash"}`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(item);
+  });
+  return Object.entries(groups)
+    .filter(([, group]) => group.length > 1)
+    .map(([key, group]) => ({ key, items: group }))
+    .sort((a, b) => b.items.length - a.items.length);
+}
+
+async function liveCheckImportedHosts(baseUrl) {
+  const hosts = parseImportedHosts(subdomainInput?.value || "")
+    .filter(origin => {
+      try {
+        const host = new URL(origin).hostname;
+        return state.scopeRules.length ? isHostInScope(host, state.scopeRules) : true;
+      } catch {
+        return false;
+      }
+    })
+    .slice(0, 80);
+
+  state.hostChecks = [];
+  renderHostResults();
+
+  for (const origin of hosts) {
+    if (state.isCrawlerStopped) break;
+    try {
+      const res = await fetchTarget(origin);
+      const body = await res.text();
+      const headersText = [...res.headers.entries()].map(([key, value]) => `${key}: ${value}`).join("\n");
+      state.hostChecks.push({
+        url: origin,
+        status: res.status,
+        title: extractTitle(body),
+        length: body.length,
+        server: getHeader(res.headers, "server"),
+        tech: detectTechFromText(headersText, body),
+        hash: hashText(body)
+      });
+    } catch (error) {
+      state.hostChecks.push({
+        url: origin,
+        status: "ERROR",
+        title: error.message,
+        length: 0,
+        server: "",
+        tech: [],
+        hash: ""
+      });
+    }
+    renderHostResults();
+  }
+}
+
 const setProgress = (percent) => {
   const p = Math.round(percent);
   document.getElementById("progress-bar").style.width = `${p}%`;
@@ -1038,6 +1191,7 @@ const startScan = async (maxDepth) => {
   state.allData = [];
   state.scannedUrls.clear();
   state.fetchFailures = [];
+  state.hostChecks = [];
   state.hiddenFindings.clear();
   state.findingNotes = {};
   state.activeSeverityFilter = "all";
@@ -1063,6 +1217,7 @@ const startScan = async (maxDepth) => {
 
   try {
     await recursiveScan(siteUrl, maxDepth);
+    await liveCheckImportedHosts(siteUrl);
     const importedUrls = parseImportedUrls(importedUrlInput?.value || "", siteUrl)
       .filter(importedUrl => {
         try {
@@ -1784,7 +1939,13 @@ function analyzeSecurityHeaders(res) {
   const weak = [];
 
   if (csp && /unsafe-inline|unsafe-eval|\*/i.test(csp)) weak.push("CSP contains unsafe-inline, unsafe-eval, or wildcard");
+  if (csp && !/object-src/i.test(csp)) weak.push("CSP missing object-src");
+  if (csp && !/base-uri/i.test(csp)) weak.push("CSP missing base-uri");
+  if (csp && !/frame-ancestors/i.test(csp)) weak.push("CSP missing frame-ancestors");
+  if (csp && /https:\/\/\*|http:|data:|blob:/i.test(csp)) weak.push("CSP allows broad schemes or wildcard HTTPS");
+  if (!csp) weak.push("CSP header missing");
   if (hsts && !/max-age=(?:31536000|[4-9]\d{7,})/i.test(hsts)) weak.push("HSTS max-age looks low");
+  if (!hsts) weak.push("HSTS header missing");
   if (xcto && !/nosniff/i.test(xcto)) weak.push("X-Content-Type-Options is not nosniff");
   if (cookieHeader) {
     if (!/;\s*secure/i.test(cookieHeader)) weak.push("Set-Cookie missing Secure");
@@ -1802,7 +1963,15 @@ function analyzeSecurityHeaders(res) {
 }
 
 async function analyzeCors(url) {
-  const testOrigins = ["https://evil.example", "null"];
+  const target = new URL(url);
+  const bareHost = target.hostname.replace(/^www\./, "");
+  const testOrigins = [
+    "https://evil.example",
+    "null",
+    `${target.protocol}//${bareHost}.evil.example`,
+    `${target.protocol}//evil-${bareHost}`,
+    `http://${target.hostname}`
+  ];
   const rows = [];
   const risks = [];
 
@@ -2187,7 +2356,7 @@ function renderAuthSurfaceMap(urls, baseUrl) {
 function renderResponseDiffSummary(endpointChecks) {
   const groups = {};
   endpointChecks.forEach(item => {
-    const key = `${item.status}:${item.length}`;
+    const key = `${item.status}:${item.length}:${(item.title || "no-title").toLowerCase()}:${item.hash || "no-hash"}`;
     if (!groups[key]) groups[key] = [];
     groups[key].push(item.url);
   });
@@ -2198,8 +2367,8 @@ function renderResponseDiffSummary(endpointChecks) {
     .slice(0, 12);
 
   renderReconCard("Response Diff Helper", "fas fa-not-equal", [
-    ["Repeated Pages", repeated.length ? repeated.map(([key, urls]) => `<div class="recon-list-item">${badge(key, "info")} ${badge(`${urls.length} URLs`, "warn")}${urls.slice(0, 4).map(url => urlLine(url)).join("")}</div>`).join("") : badge("none", "good")],
-    ["Use", badge("same status+length groups can reveal WAF or shared error pages", "info")]
+    ["Repeated Pages", repeated.length ? repeated.map(([key, urls]) => `<div class="recon-list-item">${badge(key.split(":").slice(0, 2).join(":"), "info")} ${badge(`${urls.length} URLs`, "warn")}${urls.slice(0, 4).map(url => urlLine(url)).join("")}</div>`).join("") : badge("none", "good")],
+    ["Use", badge("same status+length+title+body hash can reveal WAF or shared error pages", "info")]
   ], repeated.length ? "info" : "good");
 
   return repeated;
@@ -2220,6 +2389,19 @@ async function checkGraphqlEndpoints(baseUrl) {
       const signature = /"data"\s*:|"errors"\s*:|graphql|cannot query field|must provide query|graphiql|playground/i.test(text);
       if ([200, 400, 401, 403, 405].includes(res.status) && signature) {
         hits.push({ url: endpoint, status: res.status, length: text.length });
+      }
+    } catch { }
+
+    try {
+      const res = await fetchTarget(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: "{__schema{queryType{name}}}" })
+      });
+      const text = await res.text();
+      const introspection = /__schema|queryType|Introspection|SchemaMetaFieldDef|"data"\s*:|"errors"\s*:/i.test(text);
+      if ([200, 400, 401, 403].includes(res.status) && introspection) {
+        hits.push({ url: `${endpoint} (POST introspection)`, status: res.status, length: text.length });
       }
     } catch { }
   }
@@ -2331,9 +2513,9 @@ async function liveCheckEndpoints(urls, baseUrl) {
     try {
       const res = await fetchTarget(url);
       const text = await res.text();
-      checked.push({ url, status: res.status, length: text.length });
+      checked.push({ url, status: res.status, length: text.length, title: extractTitle(text), hash: hashText(text) });
     } catch {
-      checked.push({ url, status: "ERROR", length: 0 });
+      checked.push({ url, status: "ERROR", length: 0, title: "", hash: "" });
     }
   }
 
@@ -2550,6 +2732,23 @@ function renderResults(filter = "", category = "all") {
       meta.appendChild(severity);
       meta.appendChild(typeBadge);
 
+      const severitySelect = document.createElement("select");
+      severitySelect.className = "severity-override";
+      ["critical", "high", "medium", "low"].forEach(level => {
+        const option = document.createElement("option");
+        option.value = level;
+        option.textContent = level.toUpperCase();
+        option.selected = (item.severity || "low") === level;
+        severitySelect.appendChild(option);
+      });
+      severitySelect.onchange = () => {
+        item.severity = severitySelect.value;
+        renderPriorityDashboard();
+        const activeTab = document.querySelector("#crawler-section .tab-btn.active")?.dataset.tab || "all";
+        renderResults(document.getElementById("filterInput").value, activeTab);
+      };
+      meta.appendChild(severitySelect);
+
       const span = document.createElement("span");
       span.className = `endpoint-text ${item.type === 'secret' ? 'secret-item' : ''}`;
       span.innerText = item.value;
@@ -2693,6 +2892,11 @@ updateInputPreviews();
 const exportCsv = document.getElementById("exportCsv");
 const exportMd = document.getElementById("exportMd");
 const exportBugReport = document.getElementById("exportBugReport");
+const exportUrlList = document.getElementById("exportUrlList");
+const exportParamList = document.getElementById("exportParamList");
+const saveSessionBtn = document.getElementById("saveSessionBtn");
+const loadSessionBtn = document.getElementById("loadSessionBtn");
+const SESSION_KEY = "web-x-sider:last-session";
 
 exportCsv.onclick = () => {
   const csv = "Source,Line,Severity,Type,Value,Hunt Hint,Analyst Note\n" + getVisibleFindings().map(d => `"${d.source}",${d.line},"${d.severity || "low"}","${d.type}","${d.value.replace(/"/g, '""')}","${(d.hint || "").replace(/"/g, '""')}","${(state.findingNotes[getFindingKey(d)] || "").replace(/"/g, '""')}"`).join("\n");
@@ -2761,6 +2965,67 @@ exportJson.onclick = () => {
     note: state.findingNotes[getFindingKey(item)] || ""
   })), null, 2);
   downloadFile("web-x-sider-results.json", json, "application/json");
+};
+
+exportUrlList.onclick = () => {
+  const urls = new Set();
+  getVisibleFindings().forEach(item => {
+    if (["endpoint", "file", "parameter"].includes(item.type)) urls.add(item.value);
+  });
+  state.hostChecks.forEach(item => urls.add(item.url));
+  downloadFile("web-x-sider-url-list.txt", [...urls].join("\n"), "text/plain");
+};
+
+exportParamList.onclick = () => {
+  const rows = ["URL,Parameter,Type"];
+  getVisibleFindings()
+    .filter(item => item.type === "parameter")
+    .forEach(item => {
+      try {
+        const parsed = new URL(item.value, item.source);
+        parsed.searchParams.forEach((value, key) => {
+          const risk = classifyFinding("parameter", parsed.href).severity;
+          rows.push(`"${parsed.href.replace(/"/g, '""')}","${key.replace(/"/g, '""')}","${risk}"`);
+        });
+      } catch { }
+    });
+  downloadFile("web-x-sider-parameters.csv", rows.join("\n"), "text/csv");
+};
+
+saveSessionBtn.onclick = () => {
+  const payload = {
+    savedAt: new Date().toISOString(),
+    allData: state.allData,
+    hostChecks: state.hostChecks,
+    hiddenFindings: [...state.hiddenFindings],
+    findingNotes: state.findingNotes
+  };
+  localStorage.setItem(SESSION_KEY, JSON.stringify(payload));
+  alert("Scan session saved in this browser.");
+};
+
+loadSessionBtn.onclick = () => {
+  const raw = localStorage.getItem(SESSION_KEY);
+  if (!raw) return alert("No saved session found in this browser.");
+  try {
+    const payload = JSON.parse(raw);
+    state.allData = Array.isArray(payload.allData) ? payload.allData : [];
+    state.hostChecks = Array.isArray(payload.hostChecks) ? payload.hostChecks : [];
+    state.hiddenFindings = new Set(payload.hiddenFindings || []);
+    state.findingNotes = payload.findingNotes || {};
+    state.endpoints = new Set(state.allData.filter(item => item.type === "endpoint").map(item => item.value));
+    state.secrets = new Set(state.allData.filter(item => item.type === "secret").map(item => item.value));
+    state.files = new Set(state.allData.filter(item => item.type === "file").map(item => item.value));
+    state.parameters = new Set(state.allData.filter(item => item.type === "parameter").map(item => item.value));
+    updateStats();
+    renderPriorityDashboard();
+    renderHostResults();
+    document.getElementById("filter-section").style.display = "block";
+    exportActions.style.display = "flex";
+    renderResults();
+  } catch {
+    alert("Saved session could not be loaded.");
+  }
 };
 
 function downloadFile(filename, content, type) {

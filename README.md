@@ -47,6 +47,10 @@ Web X Sider V2.0 is a massive evolution, transforming from a simple scraper into
 - **Bug Bounty Report Export**: Generates a triage-style Markdown report with evidence, severity, and validation notes.
 - **Finding Workflow Controls**: Filter by severity, hide false positives from exports, add analyst notes, and copy a single finding as a report-ready block.
 - **Prober Presets**: Quickly add admin, API docs, cloud, backup, WordPress, Spring Boot, and Laravel path sets.
+- **Subdomain Import Manager**: Paste subdomains from tools like Subfinder/Amass/Chaos and fetch live status, title, length, and tech signals.
+- **Session Save/Load**: Save scan results in browser localStorage and reload them later without rescanning.
+- **Burp/ZAP Exports**: Export URL lists and parameter CSVs for proxy workflows.
+- **Manual Severity Override**: Change finding severity before exporting reports.
 - **API Call Parser**: Extracts real API calls from `fetch`, `axios`, `XMLHttpRequest`, and jQuery AJAX usage.
 - **Cloud/Bucket & Auth Mapping**: Flags real Firebase/Supabase/bucket signals and groups auth-related URLs.
 - **Parameter Discovery**: Dedicated extraction and grouping of URL parameters to identify potential injection points.
@@ -87,6 +91,9 @@ It extracts data from external JS files, inline scripts, and HTML source code - 
 | 🧾 **Bug Bounty Report** | Exports a triage report with evidence, impact hints, and validation notes.                          |
 | 📝 **Finding Notes** | Add analyst notes, hide false positives, or copy individual findings as report text.                    |
 | ⚡ **Prober Presets** | One-click custom path additions for common stacks and sensitive surfaces.                              |
+| 🌐 **Subdomain Import** | Live-check imported hosts and group duplicate responses by status, title, length, and hash.          |
+| 💾 **Session Storage** | Save and load scan sessions locally in your browser.                                                   |
+| 🧰 **Burp/ZAP Export** | Export URL and parameter lists for external proxy testing.                                             |
 | ☁️ **Cloud/Bucket Signals** | Detects Firebase, Supabase, S3, CloudFront, GCS, and Azure Blob URLs in fetched source.            |
 | 🔐 **Auth Surface Mapper** | Groups real discovered login, OAuth, token, password reset, MFA, and logout URLs.                  |
 | 🎯 **Result Filtering** | Instantly sort findings into Endpoints, Secrets, and Files with a global filter.                     |
@@ -166,6 +173,9 @@ The Recon Suite runs only live checks against the target and parsed target conte
 - Cloud bucket/config signals
 - Auth surface mapping
 - Response status/length grouping
+- CORS origin bypass cases
+- CSP deep checks
+- GraphQL POST introspection checks when the Cloudflare Worker proxy supports POST
 
 ---
 

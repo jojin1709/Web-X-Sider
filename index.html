@@ -48,7 +48,7 @@
   }
   </script>
 
-  <link rel="stylesheet" href="style.css?v=20260503-workflow1" />
+  <link rel="stylesheet" href="style.css?v=20260503-finaltools1" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -272,6 +272,13 @@
               placeholder="Paste gau, waybackurls, katana, or hakrawler URLs here"></textarea>
             <div id="importStatus" class="field-status">0 imported URLs detected.</div>
           </div>
+          <div class="advanced-scan-field glass-input">
+            <i class="fas fa-network-wired input-icon"></i>
+            <label for="subdomainInput">Subdomain / Host Import</label>
+            <textarea id="subdomainInput" rows="3"
+              placeholder="api.example.com&#10;https://admin.example.com&#10;dev.example.com"></textarea>
+            <div id="subdomainStatus" class="field-status">0 hosts detected.</div>
+          </div>
         </div>
 
         <div id="progress-container" class="progress-container" style="display: none;">
@@ -329,6 +336,7 @@
       <!-- Results Container -->
       <main id="results-container" class="results-container">
         <section id="priority-dashboard" class="priority-dashboard glass-card" style="display: none;"></section>
+        <section id="host-results-section" class="host-results-section glass-card" style="display: none;"></section>
         <div id="results-all" class="tab-content active">
           <div id="results" class="results-grid"></div>
         </div>
@@ -373,6 +381,26 @@
             <i class="fas fa-clipboard-list"></i>
             <span class="export-format">Report</span>
             <span class="export-desc">Bug Bounty</span>
+          </button>
+          <button id="exportUrlList" class="export-btn" title="Export URL list for Burp or ZAP">
+            <i class="fas fa-list"></i>
+            <span class="export-format">URLs</span>
+            <span class="export-desc">Burp/ZAP</span>
+          </button>
+          <button id="exportParamList" class="export-btn" title="Export parameter CSV for Burp or ZAP">
+            <i class="fas fa-table"></i>
+            <span class="export-format">Params</span>
+            <span class="export-desc">CSV</span>
+          </button>
+          <button id="saveSessionBtn" class="export-btn" title="Save this scan session in your browser">
+            <i class="fas fa-floppy-disk"></i>
+            <span class="export-format">Save</span>
+            <span class="export-desc">Session</span>
+          </button>
+          <button id="loadSessionBtn" class="export-btn" title="Load the last saved scan session">
+            <i class="fas fa-folder-open"></i>
+            <span class="export-format">Load</span>
+            <span class="export-desc">Session</span>
           </button>
         </div>
       </section>
@@ -569,7 +597,7 @@
     </footer>
   </div>
 
-  <script src="script.js?v=20260503-workflow1"></script>
+  <script src="script.js?v=20260503-finaltools1"></script>
   <script>
     // Light deterrent only: browser source can still be inspected by determined users.
     document.addEventListener('contextmenu', function (event) {
