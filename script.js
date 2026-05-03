@@ -639,7 +639,7 @@ const directoryfyUrl = (url) => {
 };
 
 const REMOTE_PROXY_ENDPOINTS = [
-  "https://aged-unit-e2e8.iamshafayat.workers.dev/?url="
+  "https://fragrant-frog-b197.bugbountytestinghacker.workers.dev/?url="
 ];
 
 const LOCAL_PROXY_HEADER = "x-web-x-sider-proxy";
