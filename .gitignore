@@ -2,3 +2,8 @@ __pycache__/
 *.py[cod]
 .DS_Store
 Thumbs.db
+sitemap.xml
+robots.txt
+server.py
+server.js
+cloudflare-worker-proxy.js
