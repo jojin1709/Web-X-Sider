@@ -1299,6 +1299,34 @@ body {
   margin-bottom: var(--space-lg);
 }
 
+.diagnostic-card {
+  background: rgba(15, 23, 42, 0.42);
+  border: 1px solid var(--glass-border);
+  border-left: 4px solid var(--primary-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  color: var(--text-secondary);
+}
+
+.diagnostic-card h3 {
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  margin-bottom: var(--space-sm);
+}
+
+.diagnostic-card p {
+  margin-top: 8px;
+  line-height: 1.55;
+}
+
+.diagnostic-warn {
+  border-left-color: var(--warning);
+}
+
+.diagnostic-bad {
+  border-left-color: var(--danger);
+}
+
 .host-results-section h3 {
   color: var(--text-primary);
   font-size: 1rem;

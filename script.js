@@ -830,6 +830,7 @@ const state = {
   isScanning: false,
   isCrawlerStopped: false,
   fetchFailures: [],
+  scanDiagnostic: null,
   scopeRules: [],
   hiddenFindings: new Set(),
   findingNotes: {},
@@ -1195,6 +1196,7 @@ const startScan = async (maxDepth) => {
   state.allData = [];
   state.scannedUrls.clear();
   state.fetchFailures = [];
+  state.scanDiagnostic = null;
   state.hostChecks = [];
   state.hiddenFindings.clear();
   state.findingNotes = {};
@@ -1240,7 +1242,8 @@ const startScan = async (maxDepth) => {
     }
 
     if (!state.isCrawlerStopped && state.fetchFailures.length && state.allData.length === 0) {
-      status.innerText = `Scan finished, but nothing could be fetched. ${state.fetchFailures[0]}`;
+      state.scanDiagnostic = buildScanDiagnostic(siteUrl);
+      status.innerText = state.scanDiagnostic.statusText;
     } else if (!state.isCrawlerStopped) {
       status.innerText = state.allData.length
         ? "Scan complete!"
@@ -1305,7 +1308,7 @@ async function recursiveScan(url, maxDepth, currentDepth = 0, targetHost = null)
       try {
         const bodyPreview = await res.clone().text();
         if (res.status === 403 && isCloudflareChallengePage(bodyPreview)) {
-          reason = `Skipped ${normUrl} (403 Cloudflare challenge blocked automated proxy requests; use an authorized target or imported URL list)`;
+          reason = `Skipped ${normUrl} (403 Cloudflare challenge blocked automated proxy requests)`;
         }
       } catch { }
       state.fetchFailures.push(reason);
@@ -2709,6 +2712,56 @@ function filterUrl(url) {
   );
 }
 
+function buildScanDiagnostic(targetUrl) {
+  const firstFailure = state.fetchFailures[0] || "";
+  const protectionBlocked = /cloudflare challenge blocked automated proxy requests/i.test(firstFailure);
+
+  if (protectionBlocked) {
+    return {
+      title: "Target Protection Blocked Scan",
+      statusText: "Scan complete: target protection blocked automated proxy requests.",
+      tone: "warn",
+      lines: [
+        `Target: ${targetUrl}`,
+        "The site returned a Cloudflare challenge to the public proxy, so browser-based crawling cannot read the page source.",
+        "This is target-side protection, not a Web X Sider crash.",
+        "Use the Imported URLs field with authorized URLs, try the Prober for explicit paths, or scan a target that allows automated requests."
+      ]
+    };
+  }
+
+  return {
+    title: "Target Could Not Be Fetched",
+    statusText: `Scan complete: no readable source was fetched. ${firstFailure}`,
+    tone: "bad",
+    lines: [
+      `Target: ${targetUrl}`,
+      firstFailure || "No response body could be read.",
+      "Check the target URL, scope, proxy availability, and whether the site allows automated requests."
+    ]
+  };
+}
+
+function renderScanDiagnostic() {
+  if (!state.scanDiagnostic) return false;
+  const diagnostic = state.scanDiagnostic;
+  const card = document.createElement("div");
+  card.className = `diagnostic-card diagnostic-${diagnostic.tone || "info"}`;
+
+  const title = document.createElement("h3");
+  title.innerText = diagnostic.title;
+  card.appendChild(title);
+
+  diagnostic.lines.forEach(line => {
+    const p = document.createElement("p");
+    p.innerText = line;
+    card.appendChild(p);
+  });
+
+  results.appendChild(card);
+  return true;
+}
+
 function renderResults(filter = "", category = "all") {
   results.innerHTML = "";
   const grouped = {};
@@ -2724,6 +2777,7 @@ function renderResults(filter = "", category = "all") {
 
   const sourceEntries = Object.entries(grouped);
   if (sourceEntries.length === 0) {
+    if (renderScanDiagnostic()) return;
     results.innerHTML = "<div class='status'>No results found matching your criteria.</div>";
     return;
   }
