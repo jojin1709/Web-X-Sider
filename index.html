@@ -566,6 +566,16 @@
           </button>
         </div>
 
+        <div class="advanced-scan-grid recon-import-grid">
+          <div class="advanced-scan-field glass-input recon-import-field">
+            <i class="fas fa-list input-icon"></i>
+            <label for="reconUrlList">Recon URL Import</label>
+            <textarea id="reconUrlList" rows="3"
+              placeholder="Paste URLs from gau, waybackurls, katana, sitemap, or proxy history"></textarea>
+            <div class="field-status">Optional. Imported URLs are checked with the recon results.</div>
+          </div>
+        </div>
+
         <div id="recon-progress-container" class="progress-container" style="display: none; margin-top: 1.5rem;">
           <div class="progress-bar-wrapper">
             <div class="progress-bar-bg">
@@ -597,7 +607,7 @@
     </footer>
   </div>
 
-  <script src="script.js?v=20260503-finaltools1"></script>
+  <script src="script.js?v=20260504-proxyfix1"></script>
   <script>
     // Light deterrent only: browser source can still be inspected by determined users.
     document.addEventListener('contextmenu', function (event) {

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://jojin1709.github.io/Web-X-Sider/sitemap.xml

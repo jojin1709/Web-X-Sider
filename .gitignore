@@ -2,11 +2,7 @@ __pycache__/
 *.py[cod]
 .DS_Store
 Thumbs.db
-sitemap.xml
-robots.txt
-server.py
 server.js
-cloudflare-worker-proxy.js
 
 # wrangler files
 .wrangler
@@ -14,3 +10,4 @@ cloudflare-worker-proxy.js
 !.dev.vars.example
 .env*
 !.env.example
+wrangler.jsonc

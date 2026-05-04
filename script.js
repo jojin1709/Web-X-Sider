@@ -716,7 +716,7 @@ async function fetchTarget(url, options = {}) {
         continue;
       }
 
-      if (candidate.viaProxy && [403, 502, 504].includes(res.status)) {
+      if (candidate.viaProxy && [502, 504].includes(res.status)) {
         errors.push(`${candidate.label} returned ${res.status}`);
         continue;
       }
@@ -733,6 +733,10 @@ async function fetchTarget(url, options = {}) {
 
   throw new Error(`Unable to fetch ${url}. ${errors.join(" | ")}. Test proxy: ${REMOTE_PROXY_ENDPOINTS[0]}https%3A%2F%2Fexample.com`);
 }
+
+const isCloudflareChallengePage = (text) => (
+  /cf_chl|challenge-platform|enable javascript and cookies|just a moment/i.test(text || "")
+);
 
 const endpointRegex = new RegExp(
   `(?:"|')((?:[a-zA-Z]{1,10}:\\/\\/|\\/\\/)[^"']*?|(?:\\/|\\.\\/|\\.\\.\\/)[^"'\\s<>]+|[a-zA-Z0-9_\\-/]+\\.[a-z]{1,5}(?:\\?[^"'\\s]*)?)(?:"|')`,
@@ -1297,7 +1301,13 @@ async function recursiveScan(url, maxDepth, currentDepth = 0, targetHost = null)
 
     const res = await fetchTarget(normUrl);
     if (!res.ok) {
-      const reason = `Skipped ${normUrl} (${res.status} ${res.statusText || "HTTP error"})`;
+      let reason = `Skipped ${normUrl} (${res.status} ${res.statusText || "HTTP error"})`;
+      try {
+        const bodyPreview = await res.clone().text();
+        if (res.status === 403 && isCloudflareChallengePage(bodyPreview)) {
+          reason = `Skipped ${normUrl} (403 Cloudflare challenge blocked automated proxy requests; use an authorized target or imported URL list)`;
+        }
+      } catch { }
       state.fetchFailures.push(reason);
       status.innerText = reason;
       return;
@@ -2551,6 +2561,26 @@ startReconBtn.onclick = async () => {
   try {
     const res = await fetchTarget(url);
     const body = await res.text();
+    if (!res.ok) {
+      const blockedByChallenge = res.status === 403 && isCloudflareChallengePage(body);
+      const reason = blockedByChallenge
+        ? "Target returned a Cloudflare challenge to automated proxy requests."
+        : `Target returned ${res.status} ${res.statusText || "HTTP error"}.`;
+
+      renderReconSummary([
+        { label: "Target Status", value: res.status, tone: "bad", note: blockedByChallenge ? "challenge" : "blocked" },
+        { label: "Body Length", value: body.length, tone: "info", note: "bytes" }
+      ]);
+      renderReconCard("Target Fetch", "fas fa-circle-exclamation", [
+        ["Status", badge(`${res.status} ${res.statusText || "HTTP error"}`, "bad")],
+        ["Result", badge(reason, "warn")],
+        ["Next Step", badge("paste authorized URLs into Recon URL Import or test a target that allows automated requests", "info")]
+      ], "bad");
+      setReconProgress(100);
+      setReconStatus(reason);
+      return;
+    }
+
     const importedUrls = parseReconUrls(reconUrlList?.value || "", url);
     const extractedEndpoints = extractEndpointsWithLines(body)
       .map(item => {

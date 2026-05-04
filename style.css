@@ -1889,6 +1889,14 @@ body {
   align-items: stretch;
 }
 
+.recon-import-grid {
+  grid-template-columns: 1fr;
+}
+
+.recon-import-field textarea {
+  min-height: 84px;
+}
+
 .recon-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
