@@ -117,7 +117,7 @@ Web X Sider automatically excludes architectural noise to focus on valuable reco
 
 ### Local Run
 
-For local testing, use the included Python server so the crawler and prober can fetch target URLs through the local `/proxy` endpoint:
+For local testing, use your private local proxy server so the crawler and prober can fetch target URLs through a local `/proxy` endpoint:
 
 ```bash
 python server.py 5501
@@ -129,7 +129,7 @@ Then open:
 http://127.0.0.1:5501/
 ```
 
-Opening `index.html` directly, or serving with plain `python -m http.server`, can load the website but break the tools because browsers block cross-origin requests.
+Opening `index.html` directly, or serving with plain `python -m http.server`, can load the website but break the tools because browsers block cross-origin requests. The local proxy helper is intentionally not published in this public GitHub Pages repo.
 
 ### 🕷️ Smart Crawler
 
@@ -184,7 +184,7 @@ The Recon Suite runs only live checks against the target and parsed target conte
 - **Structure**: HTML5 & CSS3 (Advanced Glassmorphism UI)
 - **Logic**: Vanilla JavaScript (ES6+ / Async-Await)
 - **Engine**: High-Precision Regex Engine
-- **Proxy**: Local Python proxy for development, with Cloudflare Worker fallback for hosted use
+- **Proxy**: Private local proxy for development, with hosted proxy fallback for the public GitHub Pages app
 
 ---
 

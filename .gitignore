@@ -3,6 +3,8 @@ __pycache__/
 .DS_Store
 Thumbs.db
 server.js
+server.py
+cloudflare-worker-proxy.js
 
 # wrangler files
 .wrangler
