@@ -13,6 +13,11 @@ const importStatus = document.getElementById("importStatus");
 const subdomainInput = document.getElementById("subdomainInput");
 const subdomainStatus = document.getElementById("subdomainStatus");
 const hostResultsSection = document.getElementById("host-results-section");
+const workflowImportInput = document.getElementById("workflowImportInput");
+const workflowImportFile = document.getElementById("workflowImportFile");
+const workflowImportStatus = document.getElementById("workflowImportStatus");
+const applyImportBtn = document.getElementById("applyImportBtn");
+const clearImportBtn = document.getElementById("clearImportBtn");
 
 const allResults = [];
 const scannedJs = new Set(); // avoid duplicate scans across sources
@@ -910,6 +915,23 @@ function classifyFinding(type, value) {
   return { severity: "low", hint: "Low signal by itself; keep for mapping and chaining with other findings." };
 }
 
+function inferHttpMethod(value) {
+  const path = String(value || "").toLowerCase();
+  if (/\/(?:delete|remove|destroy|disable|revoke|logout)(?:[/?#]|$)/.test(path)) return "DELETE/POST";
+  if (/\/(?:update|edit|patch|change|reset)(?:[/?#]|$)/.test(path)) return "PUT/PATCH";
+  if (/\/(?:create|add|upload|import|login|register|token|checkout|payment)(?:[/?#]|$)/.test(path)) return "POST";
+  if (/\/(?:export|download|report|search|list|users|accounts)(?:[/?#]|$)/.test(path)) return "GET";
+  return "";
+}
+
+function getFindingConfidence(item) {
+  const value = String(item.value || "");
+  if (item.type === "secret") return /AKIA|sk_live|ghp_|xox|-----BEGIN|hooks\.slack|discord(?:app)?\.com\/api\/webhooks/i.test(value) ? "high" : "medium";
+  if (/^https?:\/\//i.test(value)) return "high";
+  if (item.type === "parameter" || value.includes("?")) return "medium";
+  return "low";
+}
+
 function parseScopeRules(raw) {
   return String(raw || "")
     .split(/\r?\n|,/)
@@ -948,6 +970,111 @@ function parseImportedUrls(raw, baseUrl) {
       });
     });
   return [...urls];
+}
+
+function appendUniqueLines(textarea, values) {
+  if (!textarea || !values.length) return 0;
+  const current = String(textarea.value || "")
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+  const seen = new Set(current);
+  let added = 0;
+  values.forEach(value => {
+    if (!seen.has(value)) {
+      seen.add(value);
+      current.push(value);
+      added++;
+    }
+  });
+  textarea.value = current.join("\n");
+  return added;
+}
+
+function getImportBaseUrl() {
+  const raw = urlInput?.value?.trim() || "https://example.com";
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
+
+function extractHostFromHeaderBlock(block) {
+  const match = String(block || "").match(/(?:^|\n)\s*Host:\s*([^\s\r\n]+)/i);
+  return match ? match[1].trim() : "";
+}
+
+function collectWorkflowArtifacts(raw, baseUrl = getImportBaseUrl()) {
+  const urls = new Set();
+  const hosts = new Set();
+  const text = String(raw || "");
+  const base = new URL(baseUrl);
+
+  const addUrl = (value, fallbackHost = "") => {
+    try {
+      const cleaned = String(value || "").trim().replace(/[),.;\]]+$/, "");
+      if (!cleaned) return;
+      let resolved = cleaned;
+      if (cleaned.startsWith("/") && fallbackHost) {
+        resolved = `${base.protocol}//${fallbackHost}${cleaned}`;
+      }
+      const parsed = new URL(resolved, base.origin);
+      if (!/^https?:$/i.test(parsed.protocol)) return;
+      urls.add(normalizeUrl(parsed.href));
+      hosts.add(parsed.origin);
+    } catch { }
+  };
+
+  try {
+    const parsed = JSON.parse(text);
+    const entries = parsed?.log?.entries || parsed?.entries || [];
+    if (Array.isArray(entries)) {
+      entries.forEach(entry => {
+        addUrl(entry?.request?.url || entry?.url);
+        addUrl(entry?.response?.redirectURL);
+        (entry?.request?.headers || []).forEach(header => {
+          if (/^(referer|origin)$/i.test(header?.name || "")) addUrl(header.value);
+        });
+      });
+    }
+  } catch { }
+
+  (text.match(/https?:\/\/[^\s"'<>\\]+/gi) || []).forEach(addUrl);
+
+  const requestBlocks = text.split(/\n\s*\n/);
+  requestBlocks.forEach(block => {
+    const fallbackHost = extractHostFromHeaderBlock(block);
+    const firstLine = block.match(/^\s*(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+([^\s]+)\s+HTTP\/\d(?:\.\d)?/im);
+    if (firstLine) addUrl(firstLine[2], fallbackHost);
+  });
+
+  text.split(/\r?\n/).forEach(line => {
+    const trimmed = line.trim();
+    if (/^\/[A-Za-z0-9_~./?&=%{}:@-]+$/.test(trimmed)) addUrl(trimmed);
+  });
+
+  return {
+    urls: [...urls].sort(),
+    hosts: [...hosts].sort()
+  };
+}
+
+function applyWorkflowImport(raw = workflowImportInput?.value || "") {
+  const artifacts = collectWorkflowArtifacts(raw);
+  if (!artifacts.urls.length && !artifacts.hosts.length) {
+    if (workflowImportStatus) workflowImportStatus.innerText = "No URLs or hosts were found in the import.";
+    return;
+  }
+
+  if (!urlInput.value.trim() && artifacts.urls[0]) {
+    try {
+      urlInput.value = new URL(artifacts.urls[0]).origin;
+    } catch { }
+  }
+
+  const addedUrls = appendUniqueLines(importedUrlInput, artifacts.urls);
+  const addedHosts = appendUniqueLines(subdomainInput, artifacts.hosts);
+  if (workflowImportStatus) {
+    workflowImportStatus.innerText = `Added ${addedUrls} URL${addedUrls === 1 ? "" : "s"} and ${addedHosts} host${addedHosts === 1 ? "" : "s"} to the scan inputs.`;
+  }
+  updateInputPreviews();
 }
 
 function parseImportedHosts(raw) {
@@ -2758,6 +2885,35 @@ function renderScanDiagnostic() {
     card.appendChild(p);
   });
 
+  const actions = document.createElement("div");
+  actions.className = "diagnostic-actions";
+
+  const addFallbackBtn = document.createElement("button");
+  addFallbackBtn.type = "button";
+  addFallbackBtn.className = "diagnostic-action-btn";
+  addFallbackBtn.innerHTML = '<i class="fas fa-sitemap"></i><span>Add robots/sitemap</span>';
+  addFallbackBtn.onclick = () => {
+    try {
+      const origin = new URL((urlInput.value || diagnostic.lines[0] || "").replace(/^Target:\s*/i, "")).origin;
+      const added = appendUniqueLines(importedUrlInput, [`${origin}/robots.txt`, `${origin}/sitemap.xml`, `${origin}/sitemap_index.xml`]);
+      if (workflowImportStatus) workflowImportStatus.innerText = `Added ${added} fallback URL${added === 1 ? "" : "s"} for protected-target discovery.`;
+      updateInputPreviews();
+    } catch { }
+  };
+
+  const proberBtn = document.createElement("button");
+  proberBtn.type = "button";
+  proberBtn.className = "diagnostic-action-btn";
+  proberBtn.innerHTML = '<i class="fas fa-crosshairs"></i><span>Send to Prober</span>';
+  proberBtn.onclick = () => {
+    proberUrlInput.value = urlInput.value;
+    navProber.click();
+  };
+
+  actions.appendChild(addFallbackBtn);
+  actions.appendChild(proberBtn);
+  card.appendChild(actions);
+
   results.appendChild(card);
   return true;
 }
@@ -2815,6 +2971,19 @@ function renderResults(filter = "", category = "all") {
 
       meta.appendChild(severity);
       meta.appendChild(typeBadge);
+
+      const confidenceBadge = document.createElement("span");
+      confidenceBadge.className = "finding-type";
+      confidenceBadge.innerText = `confidence: ${getFindingConfidence(item)}`;
+      meta.appendChild(confidenceBadge);
+
+      const methodHint = ["endpoint", "parameter"].includes(item.type) ? inferHttpMethod(item.value) : "";
+      if (methodHint) {
+        const methodBadge = document.createElement("span");
+        methodBadge.className = "finding-type";
+        methodBadge.innerText = methodHint;
+        meta.appendChild(methodBadge);
+      }
 
       const severitySelect = document.createElement("select");
       severitySelect.className = "severity-override";
@@ -2970,6 +3139,24 @@ document.querySelectorAll("[data-severity-filter]").forEach(btn => {
 scopeInput?.addEventListener("input", updateInputPreviews);
 importedUrlInput?.addEventListener("input", updateInputPreviews);
 urlInput?.addEventListener("input", updateInputPreviews);
+applyImportBtn?.addEventListener("click", () => applyWorkflowImport());
+clearImportBtn?.addEventListener("click", () => {
+  if (workflowImportInput) workflowImportInput.value = "";
+  if (workflowImportStatus) workflowImportStatus.innerText = "Workflow import cleared.";
+});
+workflowImportFile?.addEventListener("change", async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    if (workflowImportInput) workflowImportInput.value = text;
+    applyWorkflowImport(text);
+  } catch {
+    if (workflowImportStatus) workflowImportStatus.innerText = "Import file could not be read.";
+  } finally {
+    event.target.value = "";
+  }
+});
 updateInputPreviews();
 
 // Advanced Exports
@@ -2978,9 +3165,16 @@ const exportMd = document.getElementById("exportMd");
 const exportBugReport = document.getElementById("exportBugReport");
 const exportUrlList = document.getElementById("exportUrlList");
 const exportParamList = document.getElementById("exportParamList");
+const exportNuclei = document.getElementById("exportNuclei");
+const exportFfuf = document.getElementById("exportFfuf");
+const copyHighFindings = document.getElementById("copyHighFindings");
 const saveSessionBtn = document.getElementById("saveSessionBtn");
 const loadSessionBtn = document.getElementById("loadSessionBtn");
+const exportSessionBtn = document.getElementById("exportSessionBtn");
+const importSessionBtn = document.getElementById("importSessionBtn");
+const importSessionFile = document.getElementById("importSessionFile");
 const SESSION_KEY = "web-x-sider:last-session";
+const SESSION_INDEX_KEY = "web-x-sider:sessions";
 
 exportCsv.onclick = () => {
   const csv = "Source,Line,Severity,Type,Value,Hunt Hint,Analyst Note\n" + getVisibleFindings().map(d => `"${d.source}",${d.line},"${d.severity || "low"}","${d.type}","${d.value.replace(/"/g, '""')}","${(d.hint || "").replace(/"/g, '""')}","${(state.findingNotes[getFindingKey(d)] || "").replace(/"/g, '""')}"`).join("\n");
@@ -3076,41 +3270,215 @@ exportParamList.onclick = () => {
   downloadFile("web-x-sider-parameters.csv", rows.join("\n"), "text/csv");
 };
 
-saveSessionBtn.onclick = () => {
-  const payload = {
+function getExportableUrls() {
+  const urls = new Set();
+  getVisibleFindings().forEach(item => {
+    if (["endpoint", "file", "parameter"].includes(item.type)) {
+      try {
+        urls.add(new URL(item.value, item.source).href);
+      } catch {
+        urls.add(item.value);
+      }
+    }
+  });
+  state.hostChecks.forEach(item => {
+    if (item.url) urls.add(item.url);
+  });
+  parseImportedUrls(importedUrlInput?.value || "", getImportBaseUrl()).forEach(url => urls.add(url));
+  return [...urls].filter(Boolean).sort();
+}
+
+function buildNucleiTemplate() {
+  const urls = getExportableUrls();
+  const paths = new Set();
+  urls.forEach(url => {
+    try {
+      const parsed = new URL(url);
+      paths.add(`${parsed.pathname || "/"}${parsed.search || ""}`);
+    } catch { }
+  });
+  const safePaths = ([...paths].length ? [...paths] : ["/"]).slice(0, 120);
+  return [
+    "id: web-x-sider-discovered-paths",
+    "",
+    "info:",
+    "  name: Web X Sider Discovered Paths",
+    "  author: web-x-sider",
+    "  severity: info",
+    "  description: Checks paths discovered from authorized Web X Sider scans.",
+    "  tags: recon,web-x-sider",
+    "",
+    "http:",
+    "  - method: GET",
+    "    path:",
+    ...safePaths.map(path => `      - \"{{BaseURL}}${path.replace(/"/g, '\\"')}\"`),
+    "",
+    "    matchers-condition: or",
+    "    matchers:",
+    "      - type: status",
+    "        status:",
+    "          - 200",
+    "          - 204",
+    "          - 301",
+    "          - 302",
+    "          - 401",
+    "          - 403"
+  ].join("\n");
+}
+
+function buildFfufCommands() {
+  const urls = getExportableUrls();
+  const byOrigin = {};
+  urls.forEach(url => {
+    try {
+      const parsed = new URL(url);
+      const origin = parsed.origin;
+      if (!byOrigin[origin]) byOrigin[origin] = new Set();
+      const firstSegment = parsed.pathname.split("/").filter(Boolean)[0];
+      if (firstSegment) byOrigin[origin].add(firstSegment);
+    } catch { }
+  });
+
+  const lines = [
+    "# Review scope and authorization before running.",
+    "# Replace wordlist path with your local list."
+  ];
+  Object.entries(byOrigin).forEach(([origin, words]) => {
+    const wordlist = [...words].sort();
+    if (wordlist.length) {
+      lines.push("");
+      lines.push(`# ${origin}`);
+      lines.push(`printf '${wordlist.map(item => item.replace(/'/g, "'\\''")).join("\\n")}' > web-x-sider-${new URL(origin).hostname}-words.txt`);
+      lines.push(`ffuf -u ${origin}/FUZZ -w web-x-sider-${new URL(origin).hostname}-words.txt -mc 200,204,301,302,401,403 -ac`);
+    }
+  });
+  if (lines.length === 2) lines.push("# No exportable URLs were found.");
+  return lines.join("\n");
+}
+
+function buildHighRiskText() {
+  const items = getVisibleFindings()
+    .filter(item => ["critical", "high"].includes(item.severity || "low"))
+    .sort((a, b) => (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0));
+  if (!items.length) return "No high or critical findings are currently visible.";
+  return items.map(buildFindingReportText).join("\n\n---\n\n");
+}
+
+exportNuclei.onclick = () => {
+  downloadFile("web-x-sider-nuclei-template.yaml", buildNucleiTemplate(), "text/yaml");
+};
+
+exportFfuf.onclick = () => {
+  downloadFile("web-x-sider-ffuf-commands.sh", buildFfufCommands(), "text/plain");
+};
+
+copyHighFindings.onclick = async () => {
+  try {
+    await navigator.clipboard.writeText(buildHighRiskText());
+    alert("High and critical findings copied.");
+  } catch {
+    alert("Copy failed. Use an exported report instead.");
+  }
+};
+
+function buildSessionPayload(name = "Web X Sider Session") {
+  return {
+    name,
     savedAt: new Date().toISOString(),
+    targetUrl: urlInput?.value || "",
+    scopeInput: scopeInput?.value || "",
+    importedUrlInput: importedUrlInput?.value || "",
+    subdomainInput: subdomainInput?.value || "",
     allData: state.allData,
     hostChecks: state.hostChecks,
     hiddenFindings: [...state.hiddenFindings],
-    findingNotes: state.findingNotes
+    findingNotes: state.findingNotes,
+    scanDiagnostic: state.scanDiagnostic
   };
+}
+
+function restoreSessionPayload(payload) {
+  state.allData = Array.isArray(payload.allData) ? payload.allData : [];
+  state.hostChecks = Array.isArray(payload.hostChecks) ? payload.hostChecks : [];
+  state.hiddenFindings = new Set(payload.hiddenFindings || []);
+  state.findingNotes = payload.findingNotes || {};
+  state.scanDiagnostic = payload.scanDiagnostic || null;
+  state.endpoints = new Set(state.allData.filter(item => item.type === "endpoint").map(item => item.value));
+  state.secrets = new Set(state.allData.filter(item => item.type === "secret").map(item => item.value));
+  state.files = new Set(state.allData.filter(item => item.type === "file").map(item => item.value));
+  state.parameters = new Set(state.allData.filter(item => item.type === "parameter").map(item => item.value));
+  if (payload.targetUrl !== undefined) urlInput.value = payload.targetUrl || "";
+  if (payload.scopeInput !== undefined) scopeInput.value = payload.scopeInput || "";
+  if (payload.importedUrlInput !== undefined) importedUrlInput.value = payload.importedUrlInput || "";
+  if (payload.subdomainInput !== undefined) subdomainInput.value = payload.subdomainInput || "";
+  updateInputPreviews();
+  updateStats();
+  renderPriorityDashboard();
+  renderHostResults();
+  document.getElementById("filter-section").style.display = "block";
+  exportActions.style.display = "flex";
+  renderResults();
+}
+
+function getSessionIndex() {
+  try {
+    return JSON.parse(localStorage.getItem(SESSION_INDEX_KEY) || "[]").filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function setSessionIndex(names) {
+  localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify([...new Set(names)].sort()));
+}
+
+saveSessionBtn.onclick = () => {
+  const name = (prompt("Session name:", `Scan ${new Date().toLocaleString()}`) || "").trim();
+  if (!name) return;
+  const payload = buildSessionPayload(name);
   localStorage.setItem(SESSION_KEY, JSON.stringify(payload));
-  alert("Scan session saved in this browser.");
+  localStorage.setItem(`${SESSION_KEY}:${name}`, JSON.stringify(payload));
+  setSessionIndex([...getSessionIndex(), name]);
+  alert(`Scan session saved as "${name}".`);
 };
 
 loadSessionBtn.onclick = () => {
-  const raw = localStorage.getItem(SESSION_KEY);
+  const names = getSessionIndex();
+  const selected = names.length
+    ? prompt(`Load session name:\n${names.join("\n")}`, names[names.length - 1])
+    : "";
+  const raw = selected
+    ? localStorage.getItem(`${SESSION_KEY}:${selected}`)
+    : localStorage.getItem(SESSION_KEY);
   if (!raw) return alert("No saved session found in this browser.");
   try {
     const payload = JSON.parse(raw);
-    state.allData = Array.isArray(payload.allData) ? payload.allData : [];
-    state.hostChecks = Array.isArray(payload.hostChecks) ? payload.hostChecks : [];
-    state.hiddenFindings = new Set(payload.hiddenFindings || []);
-    state.findingNotes = payload.findingNotes || {};
-    state.endpoints = new Set(state.allData.filter(item => item.type === "endpoint").map(item => item.value));
-    state.secrets = new Set(state.allData.filter(item => item.type === "secret").map(item => item.value));
-    state.files = new Set(state.allData.filter(item => item.type === "file").map(item => item.value));
-    state.parameters = new Set(state.allData.filter(item => item.type === "parameter").map(item => item.value));
-    updateStats();
-    renderPriorityDashboard();
-    renderHostResults();
-    document.getElementById("filter-section").style.display = "block";
-    exportActions.style.display = "flex";
-    renderResults();
+    restoreSessionPayload(payload);
   } catch {
     alert("Saved session could not be loaded.");
   }
 };
+
+exportSessionBtn.onclick = () => {
+  const name = (prompt("Export session name:", "Web X Sider Session") || "Web X Sider Session").trim();
+  const payload = buildSessionPayload(name);
+  downloadFile("web-x-sider-session.json", JSON.stringify(payload, null, 2), "application/json");
+};
+
+importSessionBtn.onclick = () => importSessionFile?.click();
+
+importSessionFile?.addEventListener("change", async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const payload = JSON.parse(await file.text());
+    restoreSessionPayload(payload);
+  } catch {
+    alert("Session file could not be imported.");
+  } finally {
+    event.target.value = "";
+  }
+});
 
 function downloadFile(filename, content, type) {
   const blob = new Blob([content], { type });

@@ -1114,6 +1114,74 @@ body {
   top: 28px;
 }
 
+.workflow-import-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: var(--space-md);
+  padding: 14px 16px 12px 48px;
+}
+
+.workflow-import-panel label {
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.workflow-import-panel textarea {
+  width: 100%;
+  min-height: 112px;
+  resize: vertical;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.92rem;
+  outline: none;
+}
+
+.workflow-import-panel textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.workflow-import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mini-file-btn,
+.mini-action-btn,
+.diagnostic-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 8px 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.mini-file-btn:hover,
+.mini-action-btn:hover,
+.diagnostic-action-btn:hover {
+  color: white;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border-color: transparent;
+}
+
 /* ==================== FILTER SECTION ==================== */
 .filter-section {
   padding: var(--space-lg);
@@ -1317,6 +1385,13 @@ body {
 .diagnostic-card p {
   margin-top: 8px;
   line-height: 1.55;
+}
+
+.diagnostic-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: var(--space-md);
 }
 
 .diagnostic-warn {

@@ -281,6 +281,29 @@
           </div>
         </div>
 
+        <div class="workflow-import-panel glass-input">
+          <i class="fas fa-file-import input-icon"></i>
+          <label for="workflowImportInput">Workflow Import</label>
+          <textarea id="workflowImportInput" rows="4"
+            placeholder="Paste HAR JSON, Burp/ZAP proxy history, ffuf output, or raw URL lists"></textarea>
+          <div class="workflow-import-actions">
+            <label class="mini-file-btn" for="workflowImportFile">
+              <i class="fas fa-upload"></i>
+              <span>HAR / TXT</span>
+            </label>
+            <input id="workflowImportFile" type="file" accept=".har,.json,.txt,.log,.csv" hidden />
+            <button id="applyImportBtn" type="button" class="mini-action-btn">
+              <i class="fas fa-plus"></i>
+              <span>Add to Scan</span>
+            </button>
+            <button id="clearImportBtn" type="button" class="mini-action-btn">
+              <i class="fas fa-eraser"></i>
+              <span>Clear</span>
+            </button>
+          </div>
+          <div id="workflowImportStatus" class="field-status">Import HAR, proxy history, or URL lists into the scan inputs.</div>
+        </div>
+
         <div id="progress-container" class="progress-container" style="display: none;">
           <div class="progress-bar-wrapper">
             <div class="progress-bar-bg">
@@ -392,6 +415,21 @@
             <span class="export-format">Params</span>
             <span class="export-desc">CSV</span>
           </button>
+          <button id="exportNuclei" class="export-btn" title="Export a Nuclei template from discovered paths">
+            <i class="fas fa-radiation"></i>
+            <span class="export-format">Nuclei</span>
+            <span class="export-desc">Template</span>
+          </button>
+          <button id="exportFfuf" class="export-btn" title="Export ffuf commands from discovered hosts and paths">
+            <i class="fas fa-terminal"></i>
+            <span class="export-format">ffuf</span>
+            <span class="export-desc">Commands</span>
+          </button>
+          <button id="copyHighFindings" class="export-btn" title="Copy high and critical findings">
+            <i class="fas fa-copy"></i>
+            <span class="export-format">Copy</span>
+            <span class="export-desc">High Risk</span>
+          </button>
           <button id="saveSessionBtn" class="export-btn" title="Save this scan session in your browser">
             <i class="fas fa-floppy-disk"></i>
             <span class="export-format">Save</span>
@@ -402,6 +440,17 @@
             <span class="export-format">Load</span>
             <span class="export-desc">Session</span>
           </button>
+          <button id="exportSessionBtn" class="export-btn" title="Export this full session as JSON">
+            <i class="fas fa-file-export"></i>
+            <span class="export-format">Export</span>
+            <span class="export-desc">Session</span>
+          </button>
+          <button id="importSessionBtn" class="export-btn" title="Import a saved session JSON">
+            <i class="fas fa-file-import"></i>
+            <span class="export-format">Import</span>
+            <span class="export-desc">Session</span>
+          </button>
+          <input id="importSessionFile" type="file" accept=".json" hidden />
         </div>
       </section>
     </div>
@@ -607,7 +656,7 @@
     </footer>
   </div>
 
-  <script src="script.js?v=20260504-blockedtarget1"></script>
+  <script src="script.js?v=20260504-workflowtools1"></script>
   <script>
     // Light deterrent only: browser source can still be inspected by determined users.
     document.addEventListener('contextmenu', function (event) {

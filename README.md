@@ -43,13 +43,15 @@ Web X Sider V2.0 is a massive evolution, transforming from a simple scraper into
 - **Recon Discovery Modules**: Real target-derived robots.txt/sitemap parsing, OpenAPI/Swagger parsing, GraphQL surface checks, JWT decoding, and client storage token-signal detection.
 - **Custom Wordlist Prober**: Add your own paths to the built-in sensitive path checks without fake/demo data.
 - **Scope Manager & URL Import**: Keep scans inside authorized scope and import URLs from tools like `gau`, `waybackurls`, `katana`, and `hakrawler`.
+- **Workflow Import**: Import HAR files, Burp/ZAP proxy history, ffuf output, and raw URL lists into scan inputs.
 - **Priority Dashboard**: Automatically groups real findings into Critical, High, Medium, and Low buckets.
 - **Bug Bounty Report Export**: Generates a triage-style Markdown report with evidence, severity, and validation notes.
 - **Finding Workflow Controls**: Filter by severity, hide false positives from exports, add analyst notes, and copy a single finding as a report-ready block.
 - **Prober Presets**: Quickly add admin, API docs, cloud, backup, WordPress, Spring Boot, and Laravel path sets.
 - **Subdomain Import Manager**: Paste subdomains from tools like Subfinder/Amass/Chaos and fetch live status, title, length, and tech signals.
 - **Session Save/Load**: Save scan results in browser localStorage and reload them later without rescanning.
-- **Burp/ZAP Exports**: Export URL lists and parameter CSVs for proxy workflows.
+- **Burp/ZAP/Nuclei/ffuf Exports**: Export URL lists, parameter CSVs, Nuclei templates, and ffuf command helpers.
+- **Session Import/Export**: Save named sessions locally or move full session JSON between browsers.
 - **Manual Severity Override**: Change finding severity before exporting reports.
 - **API Call Parser**: Extracts real API calls from `fetch`, `axios`, `XMLHttpRequest`, and jQuery AJAX usage.
 - **Cloud/Bucket & Auth Mapping**: Flags real Firebase/Supabase/bucket signals and groups auth-related URLs.
@@ -87,13 +89,15 @@ It extracts data from external JS files, inline scripts, and HTML source code - 
 | 🔺 **GraphQL Checks** | Checks common GraphQL surfaces for real response signatures.                                            |
 | 🧱 **Scope Manager** | Restricts crawling to authorized domains/subdomains.                                                     |
 | 🕰️ **Wayback/Gau Import** | Imports external URL lists and scans only in-scope URLs.                                           |
+| 📥 **HAR & Proxy Import** | Imports HAR JSON, Burp/ZAP history, ffuf output, and raw URLs into scan inputs.                    |
 | 🚦 **Priority Dashboard** | Groups findings by real risk signals: Critical, High, Medium, Low.                                  |
 | 🧾 **Bug Bounty Report** | Exports a triage report with evidence, impact hints, and validation notes.                          |
 | 📝 **Finding Notes** | Add analyst notes, hide false positives, or copy individual findings as report text.                    |
 | ⚡ **Prober Presets** | One-click custom path additions for common stacks and sensitive surfaces.                              |
 | 🌐 **Subdomain Import** | Live-check imported hosts and group duplicate responses by status, title, length, and hash.          |
 | 💾 **Session Storage** | Save and load scan sessions locally in your browser.                                                   |
-| 🧰 **Burp/ZAP Export** | Export URL and parameter lists for external proxy testing.                                             |
+| 🧰 **Tool Exports** | Export URL lists, parameter CSVs, Nuclei templates, ffuf commands, and high-risk finding blocks.        |
+| 🗂️ **Named Sessions** | Save named sessions locally and import/export full session JSON.                                        |
 | ☁️ **Cloud/Bucket Signals** | Detects Firebase, Supabase, S3, CloudFront, GCS, and Azure Blob URLs in fetched source.            |
 | 🔐 **Auth Surface Mapper** | Groups real discovered login, OAuth, token, password reset, MFA, and logout URLs.                  |
 | 🎯 **Result Filtering** | Instantly sort findings into Endpoints, Secrets, and Files with a global filter.                     |
