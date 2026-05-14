@@ -86,6 +86,10 @@
         <i class="fas fa-shield-halved"></i>
         <span>Recon Suite</span>
       </button>
+      <button id="navSettings" class="nav-link">
+        <i class="fas fa-gear"></i>
+        <span>Settings</span>
+      </button>
     </div>
     <div class="nav-divider"></div>
     <a href="https://www.linkedin.com/in/jojin-john-74386b34a/" target="_blank" rel="noopener noreferrer" class="nav-cta">
@@ -124,6 +128,10 @@
     <button id="navReconMobile" class="mobile-nav-link">
       <i class="fas fa-shield-halved"></i>
       <span>Recon Suite</span>
+    </button>
+    <button id="navSettingsMobile" class="mobile-nav-link">
+      <i class="fas fa-gear"></i>
+      <span>Settings</span>
     </button>
     <div class="mobile-divider"></div>
     <a href="https://www.linkedin.com/in/jojin-john-74386b34a/" target="_blank" rel="noopener noreferrer" class="mobile-cta">
@@ -253,6 +261,10 @@
             <button id="stopScanBtn" class="btn btn-danger" style="display: none;" title="Stop the scan">
               <i class="fas fa-stop"></i>
               <span>Stop Scan</span>
+            </button>
+            <button id="waybackFetchBtn" class="btn btn-secondary" title="Fetch historical URLs from the Wayback Machine">
+              <i class="fas fa-clock-rotate-left"></i>
+              <span>Wayback URLs</span>
             </button>
           </div>
         </div>
@@ -425,6 +437,26 @@
             <span class="export-format">ffuf</span>
             <span class="export-desc">Commands</span>
           </button>
+          <button id="exportBurpXml" class="export-btn" title="Export Burp Suite sitemap XML">
+            <i class="fas fa-bug"></i>
+            <span class="export-format">Burp</span>
+            <span class="export-desc">XML</span>
+          </button>
+          <button id="exportMethodMap" class="export-btn" title="Export API method map CSV">
+            <i class="fas fa-route"></i>
+            <span class="export-format">Methods</span>
+            <span class="export-desc">CSV</span>
+          </button>
+          <button id="saveBaselineBtn" class="export-btn" title="Save current results as a baseline">
+            <i class="fas fa-code-compare"></i>
+            <span class="export-format">Baseline</span>
+            <span class="export-desc">Save</span>
+          </button>
+          <button id="compareBaselineBtn" class="export-btn" title="Compare current results against saved baseline">
+            <i class="fas fa-not-equal"></i>
+            <span class="export-format">Diff</span>
+            <span class="export-desc">Compare</span>
+          </button>
           <button id="copyHighFindings" class="export-btn" title="Copy high and critical findings">
             <i class="fas fa-copy"></i>
             <span class="export-format">Copy</span>
@@ -451,6 +483,10 @@
             <span class="export-desc">Session</span>
           </button>
           <input id="importSessionFile" type="file" accept=".json" hidden />
+        </div>
+        <div id="session-list-panel" style="display:none; margin-top:1rem; width:100%;">
+          <h4 style="margin-bottom:8px; font-size:13px; color:rgba(255,255,255,0.7);">Saved Sessions</h4>
+          <div id="session-list-items" style="display:flex; flex-direction:column; gap:6px; max-height:200px; overflow-y:auto;"></div>
         </div>
       </section>
     </div>
@@ -577,6 +613,11 @@
             <button type="button" class="preset-btn" data-preset="wordpress">WordPress</button>
             <button type="button" class="preset-btn" data-preset="spring">Spring Boot</button>
             <button type="button" class="preset-btn" data-preset="laravel">Laravel</button>
+            <label class="preset-btn" for="proberWordlistFile" style="cursor:pointer;">
+              <i class="fas fa-upload"></i>
+              <span>Import Wordlist</span>
+            </label>
+            <input id="proberWordlistFile" type="file" accept=".txt,.lst,.wordlist,.csv" hidden />
           </div>
         </div>
 
@@ -643,6 +684,48 @@
       </section>
     </div>
 
+    <div id="settings-panel" style="display:none;">
+      <section class="glass-card glass-card-lg" style="padding:2rem;">
+        <div class="card-header">
+          <div class="card-icon"><i class="fas fa-gear"></i></div>
+          <div class="card-title"><h2>Settings</h2><p>Configure scan behavior and proxy</p></div>
+        </div>
+        <div class="advanced-scan-grid">
+          <div class="advanced-scan-field glass-input">
+            <label>Crawler delay (ms)</label>
+            <input type="number" id="setting-crawlerDelay" value="300" min="0" max="5000" step="50" />
+          </div>
+          <div class="advanced-scan-field glass-input">
+            <label>Prober delay (ms)</label>
+            <input type="number" id="setting-proberDelay" value="450" min="0" max="5000" step="50" />
+          </div>
+          <div class="advanced-scan-field glass-input">
+            <label>Concurrent requests</label>
+            <input type="number" id="setting-concurrency" value="5" min="1" max="20" step="1" />
+          </div>
+          <div class="advanced-scan-field glass-input">
+            <label>Custom remote proxy URL</label>
+            <input type="url" id="setting-proxyUrl" placeholder="https://your-worker.workers.dev/?url=" />
+          </div>
+          <div class="advanced-scan-field glass-input">
+            <label>Custom User-Agent</label>
+            <input type="text" id="setting-userAgent" placeholder="Leave blank for default" />
+          </div>
+          <div class="advanced-scan-field glass-input">
+            <label>Auth headers (one per line: Header: Value)</label>
+            <textarea id="setting-authHeaders" rows="3" placeholder="Authorization: Bearer eyJ...&#10;Cookie: session=abc123"></textarea>
+          </div>
+          <div class="advanced-scan-field glass-input">
+            <label>Custom secret patterns (JSON: {&quot;Name&quot;: &quot;regex&quot;})</label>
+            <textarea id="setting-customSecrets" rows="3" placeholder='{"My Token": "/myapp_[a-z0-9]{32}/g"}'></textarea>
+          </div>
+        </div>
+        <button id="saveSettingsBtn" class="btn btn-primary" style="margin-top:1rem;">
+          <i class="fas fa-save"></i><span>Save Settings</span>
+        </button>
+      </section>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
       <div class="footer-glass glass-card">
@@ -656,26 +739,23 @@
     </footer>
   </div>
 
-  <script src="script.js?v=20260504-workflowtools1"></script>
+  <div id="toast-container" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;"></div>
+
+  <div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center;">
+    <div id="modal-box" style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:24px;min-width:320px;max-width:480px;width:90%;">
+      <div id="modal-title" style="font-size:16px;font-weight:600;color:#fff;margin-bottom:12px;"></div>
+      <input id="modal-input" type="text" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:14px;outline:none;display:none;" />
+      <div id="modal-message" style="font-size:14px;color:rgba(255,255,255,0.75);margin-bottom:16px;line-height:1.5;"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button id="modal-cancel" style="padding:8px 16px;background:transparent;border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:rgba(255,255,255,0.7);cursor:pointer;font-size:13px;">Cancel</button>
+        <button id="modal-confirm" style="padding:8px 16px;background:#0dcaf0;border:none;border-radius:8px;color:#000;cursor:pointer;font-size:13px;font-weight:600;">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/js-beautify@1.15.1/js/lib/beautify.js"></script>
+  <script src="script.js?v=20260514-fixes"></script>
   <script>
-    // Light deterrent only: browser source can still be inspected by determined users.
-    document.addEventListener('contextmenu', function (event) {
-      event.preventDefault();
-    });
-
-    document.addEventListener('keydown', function (event) {
-      const key = event.key.toLowerCase();
-      const blocked =
-        event.key === 'F12' ||
-        (event.ctrlKey && event.shiftKey && ['i', 'j', 'c'].includes(key)) ||
-        (event.ctrlKey && ['u', 's'].includes(key));
-
-      if (blocked) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    });
-
     // Mobile menu toggle
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileMenu = document.getElementById('mobileMenu');
@@ -689,11 +769,13 @@
     const navCrawlerMobile = document.getElementById('navCrawlerMobile');
     const navProberMobile = document.getElementById('navProberMobile');
     const navReconMobile = document.getElementById('navReconMobile');
+    const navSettingsMobile = document.getElementById('navSettingsMobile');
 
     const setMobileActive = (active) => {
       navCrawlerMobile?.classList.toggle('active', active === 'crawler');
       navProberMobile?.classList.toggle('active', active === 'prober');
       navReconMobile?.classList.toggle('active', active === 'recon');
+      navSettingsMobile?.classList.toggle('active', active === 'settings');
     };
 
     navCrawlerMobile?.addEventListener('click', function () {
@@ -717,6 +799,13 @@
       mobileMenuBtn.classList.remove('active');
     });
 
+    navSettingsMobile?.addEventListener('click', function () {
+      document.getElementById('navSettings').click();
+      setMobileActive('settings');
+      mobileMenu.classList.remove('active');
+      mobileMenuBtn.classList.remove('active');
+    });
+
     // Sync desktop nav active states
     document.getElementById('navCrawler')?.addEventListener('click', function () {
       document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
@@ -734,6 +823,12 @@
       document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
       this.classList.add('active');
       setMobileActive('recon');
+    });
+
+    document.getElementById('navSettings')?.addEventListener('click', function () {
+      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+      this.classList.add('active');
+      setMobileActive('settings');
     });
   </script>
 </body>

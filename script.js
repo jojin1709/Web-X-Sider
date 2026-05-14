@@ -1,3 +1,97 @@
+function showToast(message, type = "info", duration = 4000) {
+  const container = document.getElementById("toast-container");
+  if (!container) { console.log(message); return; }
+  const colors = { info: "#0dcaf0", warn: "#ffc107", error: "#dc3545", success: "#28a745" };
+  const toast = document.createElement("div");
+  toast.style.cssText = `background:#1a1a2e;border:1px solid ${colors[type] || colors.info};border-radius:8px;padding:12px 16px;color:#fff;font-size:13px;max-width:360px;pointer-events:auto;box-shadow:0 4px 20px rgba(0,0,0,0.4);line-height:1.4;`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transition = "opacity 0.3s";
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+function showPrompt(title, defaultValue = "", placeholder = "") {
+  return new Promise(resolve => {
+    const overlay = document.getElementById("modal-overlay");
+    const titleEl = document.getElementById("modal-title");
+    const inputEl = document.getElementById("modal-input");
+    const msgEl = document.getElementById("modal-message");
+    const confirmBtn = document.getElementById("modal-confirm");
+    const cancelBtn = document.getElementById("modal-cancel");
+    if (!overlay || !titleEl || !inputEl || !msgEl || !confirmBtn || !cancelBtn) {
+      console.warn("Prompt modal is unavailable:", title);
+      resolve(null);
+      return;
+    }
+    titleEl.textContent = title;
+    inputEl.style.display = "block";
+    inputEl.value = defaultValue;
+    inputEl.placeholder = placeholder || "";
+    msgEl.textContent = "";
+    overlay.style.display = "flex";
+    inputEl.focus();
+    const cleanup = (value) => {
+      overlay.style.display = "none";
+      inputEl.style.display = "none";
+      confirmBtn.onclick = null;
+      cancelBtn.onclick = null;
+      inputEl.onkeydown = null;
+      resolve(value);
+    };
+    confirmBtn.onclick = () => cleanup(inputEl.value.trim() || null);
+    cancelBtn.onclick = () => cleanup(null);
+    inputEl.onkeydown = (e) => {
+      if (e.key === "Enter") cleanup(inputEl.value.trim() || null);
+      if (e.key === "Escape") cleanup(null);
+    };
+  });
+}
+
+function showConfirm(message) {
+  return new Promise(resolve => {
+    const overlay = document.getElementById("modal-overlay");
+    const titleEl = document.getElementById("modal-title");
+    const msgEl = document.getElementById("modal-message");
+    const inputEl = document.getElementById("modal-input");
+    const confirmBtn = document.getElementById("modal-confirm");
+    const cancelBtn = document.getElementById("modal-cancel");
+    if (!overlay || !titleEl || !msgEl || !inputEl || !confirmBtn || !cancelBtn) {
+      console.warn("Confirm modal is unavailable:", message);
+      resolve(false);
+      return;
+    }
+    titleEl.textContent = "Confirm";
+    msgEl.textContent = message;
+    inputEl.style.display = "none";
+    overlay.style.display = "flex";
+    const cleanup = (val) => {
+      overlay.style.display = "none";
+      confirmBtn.onclick = null;
+      cancelBtn.onclick = null;
+      resolve(val);
+    };
+    confirmBtn.onclick = () => cleanup(true);
+    cancelBtn.onclick = () => cleanup(false);
+  });
+}
+
+function safeLocalStorageSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (e) {
+    if (e.name === "QuotaExceededError" || e.code === 22) {
+      showToast('Storage full. Use "Export Session" to save as JSON file instead.', "warn");
+      return false;
+    }
+    console.error("localStorage error:", e);
+    return false;
+  }
+}
+
 const scanBtn = document.getElementById("scanBtn");
 const urlInput = document.getElementById("urlInput");
 const results = document.getElementById("results");
@@ -18,6 +112,7 @@ const workflowImportFile = document.getElementById("workflowImportFile");
 const workflowImportStatus = document.getElementById("workflowImportStatus");
 const applyImportBtn = document.getElementById("applyImportBtn");
 const clearImportBtn = document.getElementById("clearImportBtn");
+const waybackFetchBtn = document.getElementById("waybackFetchBtn");
 
 const allResults = [];
 const scannedJs = new Set(); // avoid duplicate scans across sources
@@ -656,6 +751,87 @@ const REMOTE_PROXY_ENDPOINTS = [
 ];
 
 const LOCAL_PROXY_HEADER = "x-web-x-sider-proxy";
+const CRAWLER_REQUEST_DELAY_MS = 300;
+const PROBER_REQUEST_DELAY_MS = 450;
+const SETTINGS_KEY = "web-x-sider:settings";
+
+function loadSettings() {
+  try {
+    return JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveSettings() {
+  const settings = {
+    crawlerDelay: parseInt(document.getElementById("setting-crawlerDelay")?.value, 10) || 300,
+    proberDelay: parseInt(document.getElementById("setting-proberDelay")?.value, 10) || 450,
+    concurrency: Math.max(1, Math.min(20, parseInt(document.getElementById("setting-concurrency")?.value, 10) || 5)),
+    proxyUrl: document.getElementById("setting-proxyUrl")?.value?.trim() || "",
+    userAgent: document.getElementById("setting-userAgent")?.value?.trim() || "",
+    authHeaders: document.getElementById("setting-authHeaders")?.value?.trim() || "",
+    customSecrets: document.getElementById("setting-customSecrets")?.value?.trim() || ""
+  };
+  safeLocalStorageSet(SETTINGS_KEY, JSON.stringify(settings));
+  applySettings(settings);
+  showToast("Settings saved", "success");
+}
+
+function applySettings(settings = {}) {
+  window._CRAWLER_DELAY = settings.crawlerDelay !== undefined ? settings.crawlerDelay : CRAWLER_REQUEST_DELAY_MS;
+  window._PROBER_DELAY = settings.proberDelay !== undefined ? settings.proberDelay : PROBER_REQUEST_DELAY_MS;
+  window._REQUEST_CONCURRENCY = settings.concurrency !== undefined ? Math.max(1, Math.min(20, settings.concurrency)) : 5;
+  if (settings.proxyUrl) {
+    REMOTE_PROXY_ENDPOINTS[0] = settings.proxyUrl.includes("?url=") || settings.proxyUrl.endsWith("=")
+      ? settings.proxyUrl
+      : `${settings.proxyUrl.replace(/\?$/, "")}?url=`;
+  }
+}
+
+function getAuthHeaders() {
+  const settings = loadSettings();
+  const headers = {};
+  (settings.authHeaders || "").split("\n").forEach(line => {
+    const idx = line.indexOf(":");
+    if (idx > 0) {
+      const key = line.slice(0, idx).trim();
+      const value = line.slice(idx + 1).trim();
+      if (key && value) headers[key] = value;
+    }
+  });
+  return headers;
+}
+
+function getRequestConcurrency() {
+  return window._REQUEST_CONCURRENCY || 5;
+}
+
+function mapWithConcurrency(items, limit, worker) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  const runner = async () => {
+    while (nextIndex < items.length) {
+      const index = nextIndex++;
+      results[index] = await worker(items[index], index);
+    }
+  };
+  return Promise.allSettled(Array.from({ length: Math.min(limit, items.length) }, runner)).then(() => results);
+}
+
+const _initialSettings = loadSettings();
+applySettings(_initialSettings);
+document.addEventListener("DOMContentLoaded", () => {
+  const s = loadSettings();
+  if (s.crawlerDelay !== undefined) document.getElementById("setting-crawlerDelay").value = s.crawlerDelay;
+  if (s.proberDelay !== undefined) document.getElementById("setting-proberDelay").value = s.proberDelay;
+  if (s.concurrency !== undefined) document.getElementById("setting-concurrency").value = s.concurrency;
+  if (s.proxyUrl) document.getElementById("setting-proxyUrl").value = s.proxyUrl;
+  if (s.userAgent) document.getElementById("setting-userAgent").value = s.userAgent;
+  if (s.authHeaders) document.getElementById("setting-authHeaders").value = s.authHeaders;
+  if (s.customSecrets) document.getElementById("setting-customSecrets").value = s.customSecrets;
+});
+document.getElementById("saveSettingsBtn")?.addEventListener("click", saveSettings);
 
 const isLocalAppHost = () => {
   const host = window.location.hostname;
@@ -711,9 +887,19 @@ const getFetchCandidates = (url, proxyParams = {}) => {
 async function fetchTarget(url, options = {}) {
   const { proxyParams = {}, ...fetchOptions } = options;
   const errors = [];
+  const authHeaders = getAuthHeaders();
+  if (Object.keys(authHeaders).length > 0) {
+    fetchOptions.headers = { ...(fetchOptions.headers || {}), ...authHeaders };
+  }
 
   for (const candidate of getFetchCandidates(url, proxyParams)) {
     try {
+      if (candidate.viaProxy) {
+        const customUA = loadSettings()?.userAgent;
+        if (customUA) {
+          fetchOptions.headers = { ...(fetchOptions.headers || {}), "X-Web-X-Sider-User-Agent": customUA };
+        }
+      }
       const res = await fetch(candidate.url, fetchOptions);
 
       if (candidate.requiresProxyHeader && res.headers.get(LOCAL_PROXY_HEADER) !== "local") {
@@ -736,12 +922,52 @@ async function fetchTarget(url, options = {}) {
     }
   }
 
-  throw new Error(`Unable to fetch ${url}. ${errors.join(" | ")}. Test proxy: ${REMOTE_PROXY_ENDPOINTS[0]}https%3A%2F%2Fexample.com`);
+  const localHint = errors.some(error => /local proxy/i.test(error)) ? " Start server.py to use local proxy." : "";
+  throw new Error(`Unable to fetch ${url}.${localHint} ${errors.join(" | ")}. Test proxy: ${REMOTE_PROXY_ENDPOINTS[0]}https%3A%2F%2Fexample.com`);
 }
 
 const isCloudflareChallengePage = (text) => (
   /cf_chl|challenge-platform|enable javascript and cookies|just a moment/i.test(text || "")
 );
+
+const isBotProtectionPage = (text) => (
+  isCloudflareChallengePage(text) ||
+  /captcha|bot detection|automated requests?|access denied|request blocked|unusual traffic|security check|verify you are human/i.test(text || "")
+);
+
+const isSoft404Page = (text, status = 200) => {
+  if (status === 404) return true;
+  if (status !== 200) return false;
+  const titleMatch = String(text || "").match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const h1Match = String(text || "").match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+  const titleText = titleMatch ? titleMatch[1] : "";
+  const h1Text = h1Match ? h1Match[1] : "";
+  const combined = `${titleText} ${h1Text}`.replace(/\s+/g, " ").trim().slice(0, 300);
+  if (!combined) return false;
+  return /(?:404|not found|page not found|does not exist|no such file|resource missing|route not found)/i.test(combined);
+};
+
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+const classifyHttpResponse = (status, text) => {
+  if ([401, 403, 429].includes(status) && isBotProtectionPage(text)) {
+    return {
+      effectiveStatus: status === 401 ? 401 : 403,
+      note: "target protection",
+      blocked: true
+    };
+  }
+
+  if (isSoft404Page(text, status)) {
+    return {
+      effectiveStatus: 404,
+      note: status === 404 ? "not found" : "soft 404",
+      blocked: false
+    };
+  }
+
+  return { effectiveStatus: status, note: "", blocked: false };
+};
 
 const endpointRegex = new RegExp(
   `(?:"|')((?:[a-zA-Z]{1,10}:\\/\\/|\\/\\/)[^"']*?|(?:\\/|\\.\\/|\\.\\.\\/)[^"'\\s<>]+|[a-zA-Z0-9_\\-/]+\\.[a-z]{1,5}(?:\\?[^"'\\s]*)?)(?:"|')`,
@@ -759,15 +985,15 @@ const secretPatterns = {
   "Private Key": /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/g,
   "MongoDB": /mongodb(?:\+srv)?:\/\/[^\s"\'<>]+/g,
   "PostgreSQL": /postgres(?:ql)?:\/\/[^\s"\'<>]+/g,
-  "Algolia Admin API Key": /algolia.{0,32}([a-z0-9]{32})\b/gi,
-  "Algolia Application ID": /algolia.{0,16}([A-Z0-9]{10})\b/gi,
+  "Algolia Admin API Key": /(?:algoliaApiKey|algoliasearch|x-algolia-api-key)\s*[:=]\s*['"]([a-f0-9]{32})['"]/gi,
+  "Algolia Application ID": /(?:algoliaAppId|applicationID|x-algolia-application-id)\s*[:=]\s*['"]([A-Z0-9]{10})['"]/gi,
   "Cloudflare API Token": /cloudflare.{0,32}(?:secret|private|access|key|token).{0,32}([a-z0-9_-]{38,42})\b/gi,
   "Cloudflare Service Key": /(?:cloudflare|x-auth-user-service-key).{0,64}(v1\.0-[a-z0-9._-]{160,})\b/gi,
   "MySQL URI with Credentials": /mysql:\/\/[a-z0-9._%+\-]+:[^\s:@]+@(?:\[[0-9a-f:.]+\]|[a-z0-9.-]+)(?::\d{2,5})?(?:\/[^\s"\'?:]+)?(?:\?[^\s"\']*)?/g,
   "Segment Public API Token": /\bsgp_[A-Z0-9_-]{60,70}\b/g,
   "Segment API Key": /(?:segment|sgmt).{0,16}(?:secret|private|access|key|token).{0,16}([A-Z0-9_-]{40,50}\.[A-Z0-9_-]{40,50})/gi,
-  "Facebook App ID": /(?:facebook|fb).{0,8}(?:app|application).{0,16}(\d{15})\b/gi,
-  "Facebook Secret Key": /(?:facebook|fb).{0,32}(?:api|app|application|client|consumer|secret|key).{0,32}([a-z0-9]{32})\b/gi,
+  "Facebook App ID": /(?:appId|app_id|FB_APP_ID)\s*[:=]\s*['"]?(\d{15,16})['"]?/gi,
+  "Facebook Secret Key": /(?:appSecret|app_secret|FB_APP_SECRET|client_secret)\s*[:=]\s*['"]([a-f0-9]{32})['"]/gi,
   "Facebook Access Token": /EAACEdEose0cBA[A-Z0-9]{20,}\b/g,
   "Google OAuth2 Access Token": /\bya29\.[a-z0-9_-]{30,}\b/g,
   "Slack Webhook": /https:\/\/hooks\.slack\.com\/services\/[A-Z0-9]+\/[A-Z0-9]+\/[A-Za-z0-9]+/g,
@@ -776,6 +1002,27 @@ const secretPatterns = {
 
 // Fast-Path Check: Only run detailed regexes if one of these keywords is present
 const secretTrigger = /AKIA|AIza|sk_live|ghp_|xox[baprs]|eyJ|-----BEGIN|mongodb|postgres|postgresql|algolia|cloudflare|mysql|sgp_|segment|sgmt|facebook|fb|ya29|hooks\.slack\.com|discord\.com\/api\/webhooks/i;
+
+function parseRegexLiteral(input) {
+  const match = String(input || "").match(/^\/([\s\S]*)\/([a-z]*)$/i);
+  if (match) return new RegExp(match[1], match[2]);
+  return new RegExp(String(input || ""), "gi");
+}
+
+function getSecretPatterns() {
+  const patterns = { ...secretPatterns };
+  const custom = loadSettings().customSecrets;
+  if (!custom) return patterns;
+  try {
+    const parsed = JSON.parse(custom);
+    Object.entries(parsed).forEach(([name, regexSource]) => {
+      if (name && regexSource) patterns[name] = parseRegexLiteral(regexSource);
+    });
+  } catch {
+    showToast("Custom secret patterns JSON is invalid. Built-in patterns were used.", "warn", 5000);
+  }
+  return patterns;
+}
 
 const blockedSecretKeywords = [
   "defaultNumberingSystem", "defaultOutputCalendar", "twoDigitCutoffYear",
@@ -830,7 +1077,10 @@ const state = {
   files: new Set(),
   parameters: new Set(),
   allData: [], // { source, type, value, line }
+  dedupKeys: new Set(),
   scannedUrls: new Set(),
+  totalDiscovered: 0,
+  totalToScan: 1,
   probedDomains: new Set(),
   isScanning: false,
   isCrawlerStopped: false,
@@ -839,6 +1089,7 @@ const state = {
   scopeRules: [],
   hiddenFindings: new Set(),
   findingNotes: {},
+  findingTags: {},
   activeSeverityFilter: "all",
   hostChecks: []
 };
@@ -1138,6 +1389,29 @@ function getVisibleFindings() {
   return state.allData.filter(item => !state.hiddenFindings.has(getFindingKey(item)));
 }
 
+const takeoverFingerprints = [
+  { service: "GitHub Pages", pattern: /there isn't a github pages site here|404 there is no github pages site here/i },
+  { service: "Heroku", pattern: /no such app|herokucdn\.com.*error/i },
+  { service: "AWS S3", pattern: /nosuchbucket|the specified bucket does not exist/i },
+  { service: "Azure", pattern: /404 web site not found|azure/i },
+  { service: "Shopify", pattern: /sorry, this shop is currently unavailable/i },
+  { service: "Fastly", pattern: /fastly error: unknown domain/i },
+  { service: "Ghost", pattern: /the thing you were looking for is no longer here/i },
+  { service: "Pantheon", pattern: /404 error unknown site!/i },
+  { service: "Tumblr", pattern: /there's nothing here|whatever you were looking for doesn't currently exist/i },
+  { service: "Zendesk", pattern: /help center closed/i },
+  { service: "Surge.sh", pattern: /project not found/i },
+  { service: "Netlify", pattern: /not found - request id/i }
+];
+
+function checkTakeover(body, status) {
+  if (status !== 404 && status !== 200) return null;
+  for (const fp of takeoverFingerprints) {
+    if (fp.pattern.test(body || "")) return fp.service;
+  }
+  return null;
+}
+
 function updateInputPreviews() {
   const scopeRules = parseScopeRules(scopeInput?.value || "");
   if (scopeStatus) {
@@ -1164,8 +1438,9 @@ function updateInputPreviews() {
 }
 
 const addResult = (source, type, value, line = 0) => {
-  // Deduplicate same value at same line in same source ONLY if type is also the same
-  if (state.allData.some(d => d.source === source && d.value === value && d.line === line && d.type === type)) return;
+  const dedupKey = `${source}|${line}|${type}|${value}`;
+  if (state.dedupKeys.has(dedupKey)) return;
+  state.dedupKeys.add(dedupKey);
 
   const risk = classifyFinding(type, value);
   state.allData.push({ source, type, value, line, ...risk });
@@ -1223,6 +1498,7 @@ function renderHostResults() {
       </div>
       <div class="host-meta">${escapeHtml(item.length)} bytes</div>
       <div class="host-meta">${escapeHtml((item.tech || []).join(", ") || "unknown")}</div>
+      <div class="host-meta">${item.takeover ? `<span style="color:#ff4444;font-weight:bold;">TAKEOVER: ${escapeHtml(item.takeover)}</span>` : ""}</div>
     </div>
   `).join("");
 
@@ -1273,6 +1549,7 @@ async function liveCheckImportedHosts(baseUrl) {
       const res = await fetchTarget(origin);
       const body = await res.text();
       const headersText = [...res.headers.entries()].map(([key, value]) => `${key}: ${value}`).join("\n");
+      const takeover = checkTakeover(body, res.status);
       state.hostChecks.push({
         url: origin,
         status: res.status,
@@ -1280,7 +1557,8 @@ async function liveCheckImportedHosts(baseUrl) {
         length: body.length,
         server: getHeader(res.headers, "server"),
         tech: detectTechFromText(headersText, body),
-        hash: hashText(body)
+        hash: hashText(body),
+        takeover
       });
     } catch (error) {
       state.hostChecks.push({
@@ -1306,27 +1584,31 @@ const setProgress = (percent) => {
 
 const startScan = async (maxDepth) => {
   let siteUrl = urlInput.value.trim();
-  if (!siteUrl) return alert("Enter a valid URL");
+  if (!siteUrl) return showToast("Enter a valid URL", "warn");
   if (!/^https?:\/\//i.test(siteUrl)) siteUrl = "https://" + siteUrl;
   siteUrl = normalizeUrl(siteUrl);
   const startHost = new URL(siteUrl).hostname.replace(/^www\./, "");
   state.scopeRules = parseScopeRules(scopeInput?.value || "");
   if (state.scopeRules.length && !isHostInScope(startHost, state.scopeRules)) {
-    return alert("Target URL is outside the scope list.");
+    return showToast("Target URL is outside the scope list.", "warn");
   }
 
   state.scanned = 0;
+  state.totalDiscovered = 0;
+  state.totalToScan = 1;
   state.endpoints.clear();
   state.secrets.clear();
   state.files.clear();
   state.parameters.clear();
   state.allData = [];
+  state.dedupKeys.clear();
   state.scannedUrls.clear();
   state.fetchFailures = [];
   state.scanDiagnostic = null;
   state.hostChecks = [];
   state.hiddenFindings.clear();
   state.findingNotes = {};
+  state.findingTags = {};
   state.activeSeverityFilter = "all";
   document.querySelectorAll("[data-severity-filter]").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.severityFilter === "all");
@@ -1386,7 +1668,7 @@ const startScan = async (maxDepth) => {
   } catch (e) {
     console.error(e);
     if (!state.isCrawlerStopped) {
-      status.innerText = "Scan failed. Check console.";
+      status.innerText = `Scan failed: ${e.message}. Check console for details.`;
     }
   }
   scanBtn.style.display = "inline-block";
@@ -1427,22 +1709,29 @@ async function recursiveScan(url, maxDepth, currentDepth = 0, targetHost = null)
     updateStats();
 
     status.innerText = `Scanning: ${normUrl}`;
-    setProgress(Math.min(95, (state.scanned / 15) * 100));
+    const estimatedTotal = Math.max(state.totalDiscovered, state.scanned + 1, state.totalToScan || 1);
+    setProgress(Math.min(94, (state.scanned / estimatedTotal) * 100));
 
+    await delay(window._CRAWLER_DELAY !== undefined ? window._CRAWLER_DELAY : CRAWLER_REQUEST_DELAY_MS);
     const res = await fetchTarget(normUrl);
-    if (!res.ok) {
+    const contentType = getHeader(res.headers, "content-type");
+    const rawContent = await res.text();
+    const isJsAsset = /\.js(?:[?#]|$)/i.test(normUrl) || /javascript|ecmascript/i.test(contentType);
+    const content = isJsAsset ? beautifyJavaScriptForScan(rawContent) : rawContent;
+    const responseClass = classifyHttpResponse(res.status, content);
+    if (!res.ok || responseClass.blocked || responseClass.effectiveStatus === 404) {
       let reason = `Skipped ${normUrl} (${res.status} ${res.statusText || "HTTP error"})`;
-      try {
-        const bodyPreview = await res.clone().text();
-        if (res.status === 403 && isCloudflareChallengePage(bodyPreview)) {
-          reason = `Skipped ${normUrl} (403 Cloudflare challenge blocked automated proxy requests)`;
-        }
-      } catch { }
+      if (responseClass.blocked) {
+        reason = `Skipped ${normUrl} (${res.status} target protection blocked automated proxy requests)`;
+      } else if (responseClass.note === "soft 404") {
+        reason = `Skipped ${normUrl} (soft 404 page)`;
+      } else if (responseClass.effectiveStatus === 404) {
+        reason = `Skipped ${normUrl} (404 not found)`;
+      }
       state.fetchFailures.push(reason);
       status.innerText = reason;
       return;
     }
-    const content = await res.text();
 
     // Extract data with line numbers
     const foundEndpoints = extractEndpointsWithLines(content);
@@ -1471,8 +1760,12 @@ async function recursiveScan(url, maxDepth, currentDepth = 0, targetHost = null)
     // Discover more links/scripts
     const links = extractInternalLinks(content, normUrl);
     const scripts = extractScriptUrls(content, normUrl);
+    const webpackChunks = extractWebpackChunks(content, normUrl);
+    state.totalDiscovered += links.length + scripts.length + webpackChunks.length;
+    state.totalToScan += links.length + scripts.length + webpackChunks.length;
+    setProgress(Math.min(94, (state.scannedUrls.size / Math.max(state.totalToScan, 1)) * 100));
 
-    for (const script of scripts) {
+    for (const script of [...new Set([...scripts, ...webpackChunks])]) {
       if (state.isCrawlerStopped) break;
       await recursiveScan(script, maxDepth, currentDepth, targetHost);
     }
@@ -1490,22 +1783,41 @@ async function recursiveScan(url, maxDepth, currentDepth = 0, targetHost = null)
   }
 }
 
-// Optimized Line Counter - O(n) scan instead of O(n) string duplication
-function getLineNumber(content, index) {
-  let line = 1;
-  let pos = 0;
-  while ((pos = content.indexOf("\n", pos)) !== -1 && pos < index) {
-    line++;
-    pos++;
+function buildLineIndex(content) {
+  const index = [0];
+  for (let i = 0; i < content.length; i++) {
+    if (content[i] === "\n") index.push(i + 1);
   }
-  return line;
+  return index;
+}
+
+function getLineNumberFast(lineIndex, charPos) {
+  let lo = 0, hi = lineIndex.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (lineIndex[mid] <= charPos) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo + 1;
+}
+
+function beautifyJavaScriptForScan(content) {
+  try {
+    if (window.js_beautify && content.length < 2_000_000) {
+      return window.js_beautify(content, { indent_size: 2, preserve_newlines: true, max_preserve_newlines: 2 });
+    }
+  } catch (error) {
+    console.warn("JS beautify failed, scanning original content:", error);
+  }
+  return content;
 }
 
 function extractEndpointsWithLines(content) {
+  const lineIndex = buildLineIndex(content);
   const matches = [...content.matchAll(endpointRegex)];
   return matches.map(m => ({
     value: m[1],
-    line: getLineNumber(content, m.index)
+    line: getLineNumberFast(lineIndex, m.index)
   })).filter(e => {
     // Filter out Webhooks from standard endpoints so they show as Secrets (Warning color)
     if (e.value.includes("hooks.slack.com") || e.value.includes("discord.com/api/webhooks")) return false;
@@ -1515,6 +1827,7 @@ function extractEndpointsWithLines(content) {
 
 function extractApiCallsWithLines(content, baseUrl) {
   const found = [];
+  const lineIndex = buildLineIndex(content);
   const patterns = [
     /\bfetch\s*\(\s*["'`]([^"'`]+)["'`]/gi,
     /\baxios\.(?:get|post|put|patch|delete|request)\s*\(\s*["'`]([^"'`]+)["'`]/gi,
@@ -1527,13 +1840,21 @@ function extractApiCallsWithLines(content, baseUrl) {
     let match;
     while ((match = pattern.exec(content)) !== null) {
       const raw = match[2] || match[1];
-      if (!raw || raw.includes("${")) continue;
+      if (!raw) continue;
+      let processedRaw = raw;
+      let isDynamic = false;
+      if (raw.includes("${")) {
+        processedRaw = raw.split("${")[0];
+        isDynamic = true;
+        if (processedRaw.length < 2) continue;
+      }
       try {
-        const value = normalizeUrl(new URL(raw, baseUrl).href);
-        if (filterUrl(value)) {
+        const value = normalizeUrl(new URL(processedRaw, baseUrl).href);
+        const urlValue = isDynamic ? `${value}[DYNAMIC]` : value;
+        if (filterUrl(urlValue)) {
           found.push({
-            value,
-            line: getLineNumber(content, match.index)
+            value: urlValue,
+            line: getLineNumberFast(lineIndex, match.index)
           });
         }
       } catch { }
@@ -1545,10 +1866,11 @@ function extractApiCallsWithLines(content, baseUrl) {
 
 function extractSecretsWithLines(content) {
   // Fast-Path: If nothing looks like a secret, skip 20+ regex scans
-  if (!secretTrigger.test(content)) return [];
+  if (!secretTrigger.test(content) && !loadSettings().customSecrets) return [];
 
   const found = [];
-  for (const [name, regex] of Object.entries(secretPatterns)) {
+  const lineIndex = buildLineIndex(content);
+  for (const [name, regex] of Object.entries(getSecretPatterns())) {
     const matches = [...content.matchAll(regex)];
     matches.forEach(m => {
       // Prefer capture group if present (m[1]), otherwise use whole match (m[0])
@@ -1562,7 +1884,7 @@ function extractSecretsWithLines(content) {
 
       found.push({
         value: `${name}: ${val}`,
-        line: getLineNumber(content, m.index)
+        line: getLineNumberFast(lineIndex, m.index)
       });
     });
   }
@@ -1571,12 +1893,13 @@ function extractSecretsWithLines(content) {
 
 function extractFilesWithLines(content) {
   // Path-Fidelity File Detection - Updated to prioritize absolute URLs and avoid internal protocol truncation
-  const fileRegex = /((?:https?:\/\/|(?<=["']))[^"'\s<>]*\.(?:json|xml|config|env|yaml|yml|sql|db|bak|zip|tar|gz|7z|pdf|doc|docx|js|html|php|asp|aspx|jsp|txt)(?:\?[^"'\s]*)?)(?:["'\s]|$)/gi;
+  const fileRegex = /["']((?:https?:\/\/)?[^"'\s<>]*\.(?:json|xml|config|env|yaml|yml|sql|db|bak|zip|tar|gz|7z|pdf|doc|docx|js|html|php|asp|aspx|jsp|txt)(?:\?[^"'\s]*)?)["'\s]/gi;
   const matches = [...content.matchAll(fileRegex)];
+  const lineIndex = buildLineIndex(content);
 
   return matches.map(m => ({
     value: m[1],
-    line: getLineNumber(content, m.index)
+    line: getLineNumberFast(lineIndex, m.index)
   })).filter(f => {
     if (!f.value || f.value.startsWith(".")) return false;
     // Length check to avoid massive false positives
@@ -1630,40 +1953,73 @@ function extractScriptUrls(html, baseUrl) {
   return [...new Set(scripts)];
 }
 
+function extractWebpackChunks(content, baseUrl) {
+  const chunks = new Set();
+  let origin = "";
+  try {
+    origin = new URL(baseUrl).origin;
+  } catch {
+    return [];
+  }
+
+  const staticJsRefs = content.match(/["']((?:\/static\/js\/|\/assets\/js\/|\/js\/|static\/js\/|assets\/js\/|chunks\/)[^"'\s]+\.js)["']/gi) || [];
+  staticJsRefs.forEach(ref => {
+    const clean = ref.replace(/["']/g, "");
+    try { chunks.add(new URL(clean, origin).href); } catch { }
+  });
+
+  const filenameRefs = content.match(/["']([a-f0-9]{8,}\.[a-f0-9]{8,}\.js)["']/gi) || [];
+  filenameRefs.forEach(ref => {
+    const clean = ref.replace(/["']/g, "");
+    try { chunks.add(new URL(clean, directoryfyUrl(baseUrl)).href); } catch { }
+  });
+
+  const chunkMapMatch = content.match(/\{(?:\d+\s*:\s*"[a-f0-9]+"(?:,|\s))+\s*\}/i);
+  const jsSuffixMatch = content.match(/\+\s*"([^"]*\.js)"/i);
+  if (chunkMapMatch && jsSuffixMatch) {
+    const ids = chunkMapMatch[0].match(/"([a-f0-9]+)"/gi) || [];
+    ids.slice(0, 60).forEach(id => {
+      try { chunks.add(new URL(`${id.replace(/"/g, "")}${jsSuffixMatch[1]}`, directoryfyUrl(baseUrl)).href); } catch { }
+    });
+  }
+
+  return [...chunks];
+}
+
 // Navigation & Tool Switching
 const navCrawler = document.getElementById("navCrawler");
 const navProber = document.getElementById("navProber");
 const navRecon = document.getElementById("navRecon");
+const navSettings = document.getElementById("navSettings");
 const crawlerSection = document.getElementById("crawler-section");
 const proberSection = document.getElementById("prober-section");
 const reconSection = document.getElementById("recon-section");
+const settingsPanel = document.getElementById("settings-panel");
+
+function showMainPanel(panel) {
+  crawlerSection.style.display = panel === "crawler" ? "block" : "none";
+  proberSection.style.display = panel === "prober" ? "block" : "none";
+  reconSection.style.display = panel === "recon" ? "block" : "none";
+  if (settingsPanel) settingsPanel.style.display = panel === "settings" ? "block" : "none";
+  navCrawler.classList.toggle("active", panel === "crawler");
+  navProber.classList.toggle("active", panel === "prober");
+  navRecon.classList.toggle("active", panel === "recon");
+  navSettings?.classList.toggle("active", panel === "settings");
+}
 
 navCrawler.onclick = () => {
-  navCrawler.classList.add("active");
-  navProber.classList.remove("active");
-  navRecon.classList.remove("active");
-  crawlerSection.style.display = "block";
-  proberSection.style.display = "none";
-  reconSection.style.display = "none";
+  showMainPanel("crawler");
 };
 
 navProber.onclick = () => {
-  navProber.classList.add("active");
-  navCrawler.classList.remove("active");
-  navRecon.classList.remove("active");
-  proberSection.style.display = "block";
-  crawlerSection.style.display = "none";
-  reconSection.style.display = "none";
+  showMainPanel("prober");
 };
 
 navRecon.onclick = () => {
-  navRecon.classList.add("active");
-  navCrawler.classList.remove("active");
-  navProber.classList.remove("active");
-  reconSection.style.display = "block";
-  crawlerSection.style.display = "none";
-  proberSection.style.display = "none";
+  showMainPanel("recon");
 };
+
+navSettings?.addEventListener("click", () => showMainPanel("settings"));
 
 // v2.0: Probing & Parameter Discovery Logic
 const probeBtn = document.getElementById("probeBtn");
@@ -1686,6 +2042,7 @@ const proberIncludeLength = document.getElementById("proberIncludeLength");
 const proberExcludeLength = document.getElementById("proberExcludeLength");
 const customProberPanel = document.getElementById("custom-prober-panel");
 const customPathInput = document.getElementById("customPathInput");
+const proberWordlistFile = document.getElementById("proberWordlistFile");
 
 let proberData = []; // v2.0: Store results for filtering
 let activeProberFilter = "all";
@@ -1703,7 +2060,7 @@ function parseCustomPaths(raw) {
 
 probeBtn.onclick = async () => {
   let url = proberUrlInput.value.trim();
-  if (!url) return alert("Enter a URL to probe");
+  if (!url) return showToast("Enter a URL to probe", "warn");
   if (!/^https?:\/\//i.test(url)) url = "https://" + url;
 
   try {
@@ -1736,12 +2093,11 @@ probeBtn.onclick = async () => {
     const pathsToProbe = [...new Set([...sensitivePaths, ...customPaths])];
     const total = pathsToProbe.length;
     let gotAnyProbeResponse = false;
+    const recentResults = [];
+    let stoppedForProtection = false;
 
-    for (const path of pathsToProbe) {
-      if (isProberStopped) {
-        proberStatus.innerText = `Probing stopped manually.`;
-        break;
-      }
+    await mapWithConcurrency(pathsToProbe, getRequestConcurrency(), async (path) => {
+      if (isProberStopped || stoppedForProtection) return;
       completed++;
       const percent = Math.round((completed / total) * 100);
       proberProgressBar.style.width = percent + "%";
@@ -1753,10 +2109,12 @@ probeBtn.onclick = async () => {
       const cleanPath = path.startsWith("/") ? path : "/" + path;
       const fullUrl = origin + cleanPath;
       try {
+        await delay(window._PROBER_DELAY !== undefined ? window._PROBER_DELAY : PROBER_REQUEST_DELAY_MS);
         const res = await fetchTarget(fullUrl, { method: 'GET' });
         gotAnyProbeResponse = true;
-        const status = res.status;
         const text = await res.text();
+        const responseClass = classifyHttpResponse(res.status, text);
+        const status = responseClass.effectiveStatus;
         const length = text.length;
 
         // Update stats
@@ -1768,37 +2126,50 @@ probeBtn.onclick = async () => {
         proberStat403.innerText = stats[403];
         proberStat404.innerText = stats[404];
 
-        const resultItem = { path, status, fullUrl, length };
+        const resultItem = { path, status, fullUrl, length, note: responseClass.note, body: text };
         proberData.push(resultItem);
 
         // Live update UI if it matches current filter
         if (doesItemMatchFilters(resultItem)) {
-          renderProberLine(path, status, fullUrl, length);
+          renderProberLine(path, status, fullUrl, length, responseClass.note, text);
+        }
+
+        recentResults.push(responseClass.blocked ? 1 : 0);
+        if (recentResults.length > 5) recentResults.shift();
+        const recentBlockRate = recentResults.reduce((a, b) => a + b, 0) / recentResults.length;
+        if (recentResults.length >= 3 && recentBlockRate >= 0.6) {
+          proberStatus.innerText = "Probing paused: target protection is blocking automated requests.";
+          stoppedForProtection = true;
         }
       } catch (e) {
         if (!gotAnyProbeResponse) {
           const message = e.message || "Unknown fetch error";
           proberStatus.innerText = `Prober could not fetch the target. ${message}`;
-          renderProberLine(path, "ERROR", fullUrl, 0);
-          break;
+          renderProberLine(path, "ERROR", fullUrl, 0, "fetch failed");
+          stoppedForProtection = true;
+          return;
         }
 
         stats[404]++;
         proberStat404.innerText = stats[404];
-        const resultItem = { path, status: "ERROR", fullUrl, length: 0 };
+        const resultItem = { path, status: "ERROR", fullUrl, length: 0, note: "fetch failed" };
         proberData.push(resultItem);
 
         if (doesItemMatchFilters(resultItem)) {
-          renderProberLine(path, "ERROR", fullUrl, 0);
+          renderProberLine(path, "ERROR", fullUrl, 0, "fetch failed");
         }
       }
-    }
-    if (!isProberStopped) {
+    });
+    if (stoppedForProtection) {
+      proberStatus.innerText = `Probing paused after ${completed}/${total} paths because target protection blocked repeated requests.`;
+    } else if (isProberStopped) {
+      proberStatus.innerText = `Probing stopped manually.`;
+    } else if (!isProberStopped) {
       proberStatus.innerText = `Probing complete! ${total} paths checked.`;
     }
     proberFilterSection.style.display = "flex";
   } catch (e) {
-    alert("Invalid URL");
+    showToast("Invalid URL", "error");
   } finally {
     probeBtn.style.display = "inline-block";
     stopProbeBtn.style.display = "none";
@@ -1817,7 +2188,7 @@ const filterProberResults = (filter) => {
 
   proberData.forEach(item => {
     if (doesItemMatchFilters(item)) {
-      renderProberLine(item.path, item.status, item.fullUrl, item.length);
+      renderProberLine(item.path, item.status, item.fullUrl, item.length, item.note, item.body);
     }
   });
 
@@ -1879,6 +2250,7 @@ const proberPresetPaths = {
 
 document.querySelectorAll(".preset-btn").forEach(btn => {
   btn.addEventListener("click", () => {
+    if (!btn.dataset.preset) return;
     const preset = btn.dataset.preset;
     const existing = parseCustomPaths(customPathInput.value);
     const merged = [...new Set([...existing, ...(proberPresetPaths[preset] || [])])];
@@ -1886,7 +2258,23 @@ document.querySelectorAll(".preset-btn").forEach(btn => {
   });
 });
 
-function renderProberLine(path, status, fullUrl, length) {
+proberWordlistFile?.addEventListener("change", async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const imported = parseCustomPaths(text);
+    const existing = parseCustomPaths(customPathInput.value);
+    customPathInput.value = [...new Set([...existing, ...imported])].join("\n");
+    showToast(`Imported ${imported.length} prober paths.`, "success");
+  } catch (error) {
+    showToast(`Wordlist import failed: ${error.message}`, "error");
+  } finally {
+    event.target.value = "";
+  }
+});
+
+function renderProberLine(path, status, fullUrl, length, note = "", body = "") {
   const line = document.createElement("div");
   line.className = "prober-line";
 
@@ -1897,21 +2285,26 @@ function renderProberLine(path, status, fullUrl, length) {
   else if (status === 404) statusClass = "status-404"; // Red (Specified)
 
   const lengthDisplay = length !== undefined ? `<span class="prober-length" style="color:var(--text-dim); font-size:0.85em; font-family: monospace;">[${length}]</span>` : '';
+  const noteDisplay = note ? `<span class="prober-note" style="color:var(--text-dim); font-size:0.78em; margin-left: 8px;">${escapeHtml(note)}</span>` : "";
 
   let openBtnHtml = "";
   if (status === 200) {
-    openBtnHtml = `<a href="${fullUrl}" target="_blank" class="prober-open-btn-200" style="margin-left: 0;">OPEN🔗</a>`;
+    openBtnHtml = `<a href="${escapeHtml(fullUrl)}" target="_blank" class="prober-open-btn-200" style="margin-left: 0;">OPEN🔗</a>`;
   } else if (status === 403 || status === 401) {
-    openBtnHtml = `<a href="${fullUrl}" target="_blank" class="prober-open-btn-403" style="margin-left: 0;">OPEN🔗</a>`;
+    openBtnHtml = `<a href="${escapeHtml(fullUrl)}" target="_blank" class="prober-open-btn-403" style="margin-left: 0;">OPEN🔗</a>`;
   }
+  const viewerHtml = body && (status === 200 || status === 403 || status === 401)
+    ? `<details style="width:100%;margin-top:8px;"><summary style="cursor:pointer;color:var(--accent-cyan);font-size:0.85em;">Response body</summary><pre style="white-space:pre-wrap;max-height:260px;overflow:auto;background:rgba(0,0,0,0.35);padding:10px;border-radius:8px;margin-top:8px;">${escapeHtml(String(body).slice(0, 12000))}</pre></details>`
+    : "";
 
   line.innerHTML = `
-    <span class="prober-path" style="flex: 1; word-break: break-all; padding-right: 15px;">${path}</span>
+    <span class="prober-path" style="flex: 1; word-break: break-all; padding-right: 15px;">${escapeHtml(path)}${noteDisplay}</span>
     <div style="display: flex; align-items: center; justify-content: flex-end; flex-shrink: 0;">
       <span class="prober-status ${statusClass}" style="width: 50px; text-align: center;">${status}</span>
       <div style="width: 75px; text-align: center; margin-left: 5px;">${openBtnHtml}</div>
       <div style="width: 75px; text-align: right; margin-left: 5px;">${lengthDisplay}</div>
     </div>
+    ${viewerHtml}
   `;
 
   // Remove loading text if first result
@@ -2075,15 +2468,17 @@ function analyzeSecurityHeaders(res) {
   const csp = getHeader(headers, "content-security-policy");
   const hsts = getHeader(headers, "strict-transport-security");
   const xcto = getHeader(headers, "x-content-type-options");
-  const cookieHeader = getHeader(headers, "x-web-x-sider-set-cookie");
+  const cookieHeaders = [];
+  for (let i = 0; i < 20; i++) {
+    const h = headers.get(`x-web-x-sider-set-cookie-${i}`);
+    if (!h) break;
+    cookieHeaders.push(h);
+  }
+  const cookieHeader = cookieHeaders.join("; ");
   const weak = [];
 
-  if (csp && /unsafe-inline|unsafe-eval|\*/i.test(csp)) weak.push("CSP contains unsafe-inline, unsafe-eval, or wildcard");
-  if (csp && !/object-src/i.test(csp)) weak.push("CSP missing object-src");
-  if (csp && !/base-uri/i.test(csp)) weak.push("CSP missing base-uri");
-  if (csp && !/frame-ancestors/i.test(csp)) weak.push("CSP missing frame-ancestors");
-  if (csp && /https:\/\/\*|http:|data:|blob:/i.test(csp)) weak.push("CSP allows broad schemes or wildcard HTTPS");
-  if (!csp) weak.push("CSP header missing");
+  const cspWarnings = analyzeCspHeader(csp);
+  weak.push(...cspWarnings);
   if (hsts && !/max-age=(?:31536000|[4-9]\d{7,})/i.test(hsts)) weak.push("HSTS max-age looks low");
   if (!hsts) weak.push("HSTS header missing");
   if (xcto && !/nosniff/i.test(xcto)) weak.push("X-Content-Type-Options is not nosniff");
@@ -2093,13 +2488,49 @@ function analyzeSecurityHeaders(res) {
     if (!/;\s*samesite=/i.test(cookieHeader)) weak.push("Set-Cookie missing SameSite");
   }
 
+  const cspRows = csp ? [["CSP Analyzer", renderCspAnalysis(csp, cspWarnings)]] : [];
   renderReconCard("Security Headers", "fas fa-lock", [
     ["Missing", missing.length ? missing.map(item => badge(item, "bad")).join("") : badge("none", "good")],
     ...presentRows,
+    ...cspRows,
     ["Weak Signals", weak.length ? weak.map(item => badge(item, "warn")).join("") : badge("none spotted", "good")]
   ], missing.length || weak.length ? "warn" : "good");
 
   return { missing, weak };
+}
+
+function analyzeCspHeader(csp) {
+  if (!csp) return ["CSP header missing"];
+  const warnings = [];
+  if (/unsafe-inline/i.test(csp)) warnings.push("CSP allows unsafe-inline scripts/styles");
+  if (/unsafe-eval/i.test(csp)) warnings.push("CSP allows unsafe-eval");
+  if (/(^|[\s;])\*(?:[\s;]|$)|https:\/\/\*/i.test(csp)) warnings.push("CSP allows wildcard sources");
+  if (/\bdata:/i.test(csp)) warnings.push("CSP allows data: sources");
+  if (/\bblob:/i.test(csp)) warnings.push("CSP allows blob: sources");
+  if (/\bhttp:/i.test(csp)) warnings.push("CSP allows plain HTTP sources");
+  if (!/object-src/i.test(csp)) warnings.push("CSP missing object-src");
+  if (!/base-uri/i.test(csp)) warnings.push("CSP missing base-uri");
+  if (!/frame-ancestors/i.test(csp)) warnings.push("CSP missing frame-ancestors");
+  return warnings;
+}
+
+function renderCspAnalysis(csp, warnings) {
+  const directives = csp.split(";").map(part => part.trim()).filter(Boolean);
+  return `
+    <details class="recon-details">
+      <summary>${escapeHtml(directives.length)} directives, ${escapeHtml(warnings.length)} weaknesses</summary>
+      <pre>${escapeHtml(directives.join("\n"))}</pre>
+      ${warnings.length ? `<div>${warnings.map(item => badge(item, "warn")).join("")}</div>` : ""}
+    </details>
+  `;
+}
+
+function buildCorsPoc(url) {
+  return `<script>
+fetch('${url.replace(/'/g, "%27")}', {credentials:'include'})
+  .then(r => r.text())
+  .then(d => document.write(d));
+<\/script>`;
 }
 
 async function analyzeCors(url) {
@@ -2140,6 +2571,9 @@ async function analyzeCors(url) {
     }
   }
 
+  if (risks.length) {
+    rows.push(["HTML PoC", `<pre class="recon-code">${escapeHtml(buildCorsPoc(url))}</pre>`]);
+  }
   renderReconCard("CORS Check", "fas fa-share-nodes", rows, risks.length ? "warn" : "good");
   return risks;
 }
@@ -2210,6 +2644,31 @@ function findRiskyParameters(urls) {
   ], risky.length ? "warn" : "good");
 
   return risky;
+}
+
+async function detectReflectedParameters(riskyParams) {
+  const probe = `webxsider-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const checks = riskyParams.slice(0, 25);
+  const reflected = [];
+  await mapWithConcurrency(checks, Math.min(5, getRequestConcurrency()), async (item) => {
+    if (isReconStopped) return;
+    try {
+      const url = new URL(item.url);
+      url.searchParams.set(item.key, probe);
+      const res = await fetchTarget(url.href);
+      const text = await res.text();
+      if (text.includes(probe)) {
+        reflected.push({ ...item, probeUrl: url.href, status: res.status });
+      }
+    } catch { }
+  });
+
+  renderReconCard("Reflected Parameter Detector", "fas fa-mirror", [
+    ["Checked", badge(`${checks.length} risky params`, "info")],
+    ["Reflected", reflected.length ? reflected.map(item => `<div class="recon-list-item">${badge(item.key, "warn")} ${badge(item.status, "info")}${urlLine(item.probeUrl)}</div>`).join("") : badge("none", "good")]
+  ], reflected.length ? "warn" : "good");
+
+  return reflected;
 }
 
 function findInterestingSignals(body) {
@@ -2519,6 +2978,14 @@ async function checkGraphqlEndpoints(baseUrl) {
   const candidates = ["/graphql", "/api/graphql", "/v1/graphql", "/graphql/v1", "/graphiql", "/playground", "/__graphql"]
     .map(path => origin + path);
   const hits = [];
+  const introspectionQuery = `query IntrospectionQuery {
+    __schema {
+      queryType { name }
+      mutationType { name }
+      subscriptionType { name }
+      types { kind name fields { name args { name type { kind name ofType { kind name } } } type { kind name ofType { kind name } } } }
+    }
+  }`;
 
   for (const endpoint of candidates) {
     if (isReconStopped) break;
@@ -2536,19 +3003,19 @@ async function checkGraphqlEndpoints(baseUrl) {
       const res = await fetchTarget(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: "{__schema{queryType{name}}}" })
+        body: JSON.stringify({ query: introspectionQuery })
       });
       const text = await res.text();
       const introspection = /__schema|queryType|Introspection|SchemaMetaFieldDef|"data"\s*:|"errors"\s*:/i.test(text);
       if ([200, 400, 401, 403].includes(res.status) && introspection) {
-        hits.push({ url: `${endpoint} (POST introspection)`, status: res.status, length: text.length });
+        hits.push({ url: `${endpoint} (POST introspection)`, status: res.status, length: text.length, schema: text.slice(0, 50000) });
       }
     } catch { }
   }
 
   renderReconCard("GraphQL Surface Check", "fas fa-diagram-project", [
     ["Checked", badge(`${candidates.length} endpoints`, "info")],
-    ["Signals", hits.length ? hits.map(item => `<div class="recon-list-item">${badge(item.status, item.status === 200 ? "warn" : "info")} <span class="recon-code">[${escapeHtml(item.length)}]</span>${urlLine(item.url)}</div>`).join("") : badge("none", "good")]
+    ["Signals", hits.length ? hits.map(item => `<div class="recon-list-item">${badge(item.status, item.status === 200 ? "warn" : "info")} <span class="recon-code">[${escapeHtml(item.length)}]</span>${urlLine(item.url)}${item.schema ? `<details class="recon-details"><summary>Show schema/introspection response</summary><pre>${escapeHtml(item.schema)}</pre></details>` : ""}</div>`).join("") : badge("none", "good")]
   ], hits.length ? "warn" : "good");
 
   return hits;
@@ -2672,7 +3139,7 @@ async function liveCheckEndpoints(urls, baseUrl) {
 
 startReconBtn.onclick = async () => {
   let url = reconUrlInput.value.trim();
-  if (!url) return alert("Enter a URL to recon");
+  if (!url) return showToast("Enter a URL to recon", "warn");
   if (!/^https?:\/\//i.test(url)) url = "https://" + url;
   url = normalizeUrl(url);
 
@@ -2692,9 +3159,9 @@ startReconBtn.onclick = async () => {
     const res = await fetchTarget(url);
     const body = await res.text();
     if (!res.ok) {
-      const blockedByChallenge = res.status === 403 && isCloudflareChallengePage(body);
+      const blockedByChallenge = [401, 403, 429].includes(res.status) && isBotProtectionPage(body);
       const reason = blockedByChallenge
-        ? "Target returned a Cloudflare challenge to automated proxy requests."
+        ? "Target returned protection against automated proxy requests."
         : `Target returned ${res.status} ${res.statusText || "HTTP error"}.`;
 
       renderReconSummary([
@@ -2749,6 +3216,10 @@ startReconBtn.onclick = async () => {
     setReconStatus("Finding risky parameters...");
     const riskyParams = findRiskyParameters(allEndpointUrls);
 
+    setReconProgress(64);
+    setReconStatus("Checking reflected parameters...");
+    const reflectedParams = await detectReflectedParameters(riskyParams);
+
     setReconProgress(68);
     setReconStatus("Checking response signals...");
     const signals = findInterestingSignals(body);
@@ -2789,6 +3260,7 @@ startReconBtn.onclick = async () => {
       { label: "GraphQL", value: graphqlHits.length, tone: graphqlHits.length ? "warn" : "good", note: graphqlHits.length ? "signals" : "none" },
       { label: "JWTs", value: jwtTokens.length, tone: jwtTokens.length ? "warn" : "good", note: jwtTokens.length ? "decoded" : "none" },
       { label: "Risky Params", value: riskyParams.length, tone: riskyParams.length ? "warn" : "good", note: riskyParams.length ? "test manually" : "none" },
+      { label: "Reflections", value: reflectedParams.length, tone: reflectedParams.length ? "warn" : "good", note: reflectedParams.length ? "possible XSS" : "none" },
       { label: "Storage Signals", value: storageSignals.length, tone: storageSignals.length ? "warn" : "good", note: storageSignals.length ? "inspect" : "none" },
       { label: "Cloud/Buckets", value: cloudSignals.length, tone: cloudSignals.length ? "warn" : "good", note: cloudSignals.length ? "inspect" : "none" },
       { label: "Auth URLs", value: authSurfaceCount, tone: authSurfaceCount ? "warn" : "good", note: authSurfaceCount ? "mapped" : "none" },
@@ -2841,7 +3313,7 @@ function filterUrl(url) {
 
 function buildScanDiagnostic(targetUrl) {
   const firstFailure = state.fetchFailures[0] || "";
-  const protectionBlocked = /cloudflare challenge blocked automated proxy requests/i.test(firstFailure);
+  const protectionBlocked = /target protection blocked automated proxy requests/i.test(firstFailure);
 
   if (protectionBlocked) {
     return {
@@ -2850,9 +3322,9 @@ function buildScanDiagnostic(targetUrl) {
       tone: "warn",
       lines: [
         `Target: ${targetUrl}`,
-        "The site returned a Cloudflare challenge to the public proxy, so browser-based crawling cannot read the page source.",
+        "The site returned an anti-bot or access-control response to the proxy, so browser-based crawling cannot read the page source.",
         "This is target-side protection, not a Web X Sider crash.",
-        "Use the Imported URLs field with authorized URLs, try the Prober for explicit paths, or scan a target that allows automated requests."
+        "Use the Imported URLs field with authorized URLs, ask the owner to allowlist your scanner, or scan a target that allows automated requests."
       ]
     };
   }
@@ -2916,6 +3388,76 @@ function renderScanDiagnostic() {
 
   results.appendChild(card);
   return true;
+}
+
+async function validateSecret(item) {
+  const value = String(item.value || "");
+  const name = value.split(":")[0].trim().toLowerCase();
+  let testUrl = "";
+  let testOptions = {};
+  let expectFn = null;
+
+  if (name.includes("aws key")) {
+    showToast("AWS key found. Validate manually via AWS STS GetCallerIdentity.", "warn");
+    return;
+  }
+  if (name.includes("stripe live")) {
+    const key = value.split(": ").slice(1).join(": ");
+    testUrl = "https://api.stripe.com/v1/balance";
+    testOptions = { headers: { Authorization: `Bearer ${key}` } };
+    expectFn = (res) => res.status === 200 ? "VALID - active Stripe key!" : res.status === 401 ? "Invalid/expired" : `Status: ${res.status}`;
+  }
+  if (name.includes("github pat")) {
+    const key = value.split(": ").slice(1).join(": ");
+    testUrl = "https://api.github.com/user";
+    testOptions = { headers: { Authorization: `token ${key}` } };
+    expectFn = (res) => res.status === 200 ? "VALID - active GitHub token!" : "Invalid/expired";
+  }
+  if (name.includes("slack webhook")) {
+    testUrl = value.replace(/^Slack Webhook:\s*/i, "").trim();
+    testOptions = { method: "GET" };
+    expectFn = (res) => res.status !== 404 ? "Webhook URL appears active (not 404)" : "Webhook revoked (404)";
+  }
+
+  if (!testUrl) {
+    showToast("No automatic validator for this secret type. Validate manually.", "info");
+    return;
+  }
+
+  showToast("Validating secret...", "info", 2000);
+  try {
+    const res = await fetchTarget(testUrl, testOptions);
+    const result = expectFn ? expectFn(res) : `HTTP ${res.status}`;
+    showToast(`Secret validation: ${result}`, result.includes("VALID") ? "success" : "warn", 6000);
+  } catch (e) {
+    showToast(`Validation failed: ${e.message}`, "error");
+  }
+}
+
+async function tryAllMethods(item) {
+  const methods = ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"];
+  let targetUrl;
+  try {
+    targetUrl = new URL(item.value, item.source).href.replace(/\[DYNAMIC\]$/, "");
+  } catch {
+    showToast("Could not build a URL for method testing.", "warn");
+    return;
+  }
+  showToast("Testing HTTP methods...", "info", 2000);
+  const results = [];
+  await mapWithConcurrency(methods, Math.min(4, getRequestConcurrency()), async (method) => {
+    try {
+      const res = await fetchTarget(targetUrl, { method });
+      const text = method === "HEAD" ? "" : await res.text();
+      results.push({ method, status: res.status, length: text.length });
+    } catch (error) {
+      results.push({ method, status: "ERR", length: 0, error: error.message });
+    }
+  });
+  item.methodChecks = results.sort((a, b) => methods.indexOf(a.method) - methods.indexOf(b.method));
+  showToast(`Method test: ${item.methodChecks.map(r => `${r.method} ${r.status}`).join(", ")}`, "success", 7000);
+  const activeTab = document.querySelector("#crawler-section .tab-btn.active")?.dataset.tab || "all";
+  renderResults(document.getElementById("filterInput").value, activeTab);
 }
 
 function renderResults(filter = "", category = "all") {
@@ -3002,6 +3544,22 @@ function renderResults(filter = "", category = "all") {
       };
       meta.appendChild(severitySelect);
 
+      const tagSelect = document.createElement("select");
+      tagSelect.className = "severity-override";
+      ["untagged", "confirmed", "needs-testing", "false-positive", "reported"].forEach(tag => {
+        const option = document.createElement("option");
+        option.value = tag;
+        option.textContent = tag;
+        option.selected = (state.findingTags[getFindingKey(item)] || "untagged") === tag;
+        tagSelect.appendChild(option);
+      });
+      tagSelect.onchange = () => {
+        const key = getFindingKey(item);
+        if (tagSelect.value === "untagged") delete state.findingTags[key];
+        else state.findingTags[key] = tagSelect.value;
+      };
+      meta.appendChild(tagSelect);
+
       const span = document.createElement("span");
       span.className = `endpoint-text ${item.type === 'secret' ? 'secret-item' : ''}`;
       span.innerText = item.value;
@@ -3014,11 +3572,17 @@ function renderResults(filter = "", category = "all") {
       const note = document.createElement("span");
       note.className = "finding-note";
       note.innerText = noteValue ? `Note: ${noteValue}` : "";
+      const methodChecks = document.createElement("span");
+      methodChecks.className = "finding-note";
+      methodChecks.innerText = item.methodChecks?.length
+        ? `Methods: ${item.methodChecks.map(r => `${r.method} ${r.status} [${r.length}]`).join(" | ")}`
+        : "";
 
       detail.appendChild(meta);
       detail.appendChild(span);
       detail.appendChild(hint);
       detail.appendChild(note);
+      detail.appendChild(methodChecks);
 
       const actions = document.createElement("div");
       actions.className = "finding-actions";
@@ -3049,6 +3613,22 @@ function renderResults(filter = "", category = "all") {
       actions.appendChild(copyReportBtn);
       actions.appendChild(noteBtn);
       actions.appendChild(hideBtn);
+      if (item.type === "secret") {
+        const validateBtn = document.createElement("button");
+        validateBtn.className = "finding-action-btn";
+        validateBtn.title = "Validate secret";
+        validateBtn.innerHTML = '<i class="fas fa-vial"></i>';
+        validateBtn.onclick = () => validateSecret(item);
+        actions.appendChild(validateBtn);
+      }
+      if (["endpoint", "parameter"].includes(item.type)) {
+        const methodBtn = document.createElement("button");
+        methodBtn.className = "finding-action-btn";
+        methodBtn.title = "Try all HTTP methods";
+        methodBtn.innerHTML = '<i class="fas fa-route"></i>';
+        methodBtn.onclick = () => tryAllMethods(item);
+        actions.appendChild(methodBtn);
+      }
       actions.appendChild(copyBtn);
 
       li.appendChild(lineSpan);
@@ -3092,10 +3672,10 @@ function copyReportFinding(item, btn) {
   copyToClipboard(buildFindingReportText(item), btn);
 }
 
-function addFindingNote(item) {
+async function addFindingNote(item) {
   const key = getFindingKey(item);
   const current = state.findingNotes[key] || "";
-  const note = prompt("Add a note for this finding:", current);
+  const note = await showPrompt("Add a note for this finding:", current);
   if (note === null) return;
   const trimmed = note.trim();
   if (trimmed) state.findingNotes[key] = trimmed;
@@ -3139,6 +3719,24 @@ document.querySelectorAll("[data-severity-filter]").forEach(btn => {
 scopeInput?.addEventListener("input", updateInputPreviews);
 importedUrlInput?.addEventListener("input", updateInputPreviews);
 urlInput?.addEventListener("input", updateInputPreviews);
+urlInput?.addEventListener("blur", () => {
+  if (!scopeInput || scopeInput.value.trim()) return;
+  try {
+    let raw = urlInput.value.trim();
+    if (!raw) return;
+    if (!/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
+    const parts = new URL(raw).hostname.replace(/^www\./, "").split(".");
+    if (parts.length >= 2) {
+      const root = parts.slice(-2).join(".");
+      scopeInput.value = `*.${root}`;
+      if (subdomainInput && !subdomainInput.value.trim()) {
+        const guesses = ["api", "admin", "dev", "staging", "test", "internal", "mail", "vpn", "portal", "app", "dashboard", "beta"];
+        subdomainInput.value = guesses.map(prefix => `${prefix}.${root}`).join("\n");
+      }
+      updateInputPreviews();
+    }
+  } catch { }
+});
 applyImportBtn?.addEventListener("click", () => applyWorkflowImport());
 clearImportBtn?.addEventListener("click", () => {
   if (workflowImportInput) workflowImportInput.value = "";
@@ -3159,6 +3757,45 @@ workflowImportFile?.addEventListener("change", async (event) => {
 });
 updateInputPreviews();
 
+waybackFetchBtn?.addEventListener("click", async () => {
+  let siteUrl = urlInput.value.trim();
+  if (!siteUrl) return showToast("Enter a valid URL", "warn");
+  if (!/^https?:\/\//i.test(siteUrl)) siteUrl = `https://${siteUrl}`;
+  try {
+    const host = new URL(siteUrl).hostname.replace(/^www\./, "");
+    const api = `https://web.archive.org/cdx/search/cdx?url=*.${encodeURIComponent(host)}/*&output=json&fl=original&collapse=urlkey`;
+    showToast("Fetching Wayback URLs...", "info", 2000);
+    const res = await fetch(api);
+    const rows = await res.json();
+    const urls = rows.slice(1).map(row => Array.isArray(row) ? row[0] : row).filter(Boolean);
+    const existing = importedUrlInput.value.trim();
+    importedUrlInput.value = [existing, ...urls].filter(Boolean).join(existing ? "\n" : "");
+    updateInputPreviews();
+    showToast(`Imported ${urls.length} Wayback URLs.`, "success");
+  } catch (error) {
+    showToast(`Wayback fetch failed: ${error.message}`, "error");
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  const key = event.key.toLowerCase();
+  if ((event.ctrlKey || event.metaKey) && key === "enter") {
+    event.preventDefault();
+    if (crawlerSection.style.display !== "none") startScan(event.shiftKey ? 1 : 0);
+    else if (proberSection.style.display !== "none") probeBtn.click();
+    else if (reconSection.style.display !== "none") startReconBtn.click();
+  }
+  if ((event.ctrlKey || event.metaKey) && key === "s") {
+    event.preventDefault();
+    saveSessionBtn?.click();
+  }
+  if (event.key === "Escape") {
+    state.isCrawlerStopped = true;
+    isProberStopped = true;
+    isReconStopped = true;
+  }
+});
+
 // Advanced Exports
 const exportCsv = document.getElementById("exportCsv");
 const exportMd = document.getElementById("exportMd");
@@ -3167,6 +3804,10 @@ const exportUrlList = document.getElementById("exportUrlList");
 const exportParamList = document.getElementById("exportParamList");
 const exportNuclei = document.getElementById("exportNuclei");
 const exportFfuf = document.getElementById("exportFfuf");
+const exportBurpXml = document.getElementById("exportBurpXml");
+const exportMethodMap = document.getElementById("exportMethodMap");
+const saveBaselineBtn = document.getElementById("saveBaselineBtn");
+const compareBaselineBtn = document.getElementById("compareBaselineBtn");
 const copyHighFindings = document.getElementById("copyHighFindings");
 const saveSessionBtn = document.getElementById("saveSessionBtn");
 const loadSessionBtn = document.getElementById("loadSessionBtn");
@@ -3175,9 +3816,10 @@ const importSessionBtn = document.getElementById("importSessionBtn");
 const importSessionFile = document.getElementById("importSessionFile");
 const SESSION_KEY = "web-x-sider:last-session";
 const SESSION_INDEX_KEY = "web-x-sider:sessions";
+const BASELINE_KEY = "web-x-sider:baseline";
 
 exportCsv.onclick = () => {
-  const csv = "Source,Line,Severity,Type,Value,Hunt Hint,Analyst Note\n" + getVisibleFindings().map(d => `"${d.source}",${d.line},"${d.severity || "low"}","${d.type}","${d.value.replace(/"/g, '""')}","${(d.hint || "").replace(/"/g, '""')}","${(state.findingNotes[getFindingKey(d)] || "").replace(/"/g, '""')}"`).join("\n");
+  const csv = "Source,Line,Severity,Tag,Type,Value,Hunt Hint,Analyst Note\n" + getVisibleFindings().map(d => `"${d.source}",${d.line},"${d.severity || "low"}","${state.findingTags[getFindingKey(d)] || ""}","${d.type}","${d.value.replace(/"/g, '""')}","${(d.hint || "").replace(/"/g, '""')}","${(state.findingNotes[getFindingKey(d)] || "").replace(/"/g, '""')}"`).join("\n");
   downloadFile("web-x-sider-results.csv", csv, "text/csv");
 };
 
@@ -3240,7 +3882,8 @@ exportBugReport.onclick = () => {
 exportJson.onclick = () => {
   const json = JSON.stringify(getVisibleFindings().map(item => ({
     ...item,
-    note: state.findingNotes[getFindingKey(item)] || ""
+    note: state.findingNotes[getFindingKey(item)] || "",
+    tag: state.findingTags[getFindingKey(item)] || ""
   })), null, 2);
   downloadFile("web-x-sider-results.json", json, "application/json");
 };
@@ -3268,6 +3911,90 @@ exportParamList.onclick = () => {
       } catch { }
     });
   downloadFile("web-x-sider-parameters.csv", rows.join("\n"), "text/csv");
+};
+
+exportBurpXml.onclick = () => {
+  const items = getExportableUrls().map(url => {
+    let host = "";
+    let path = "";
+    let protocol = "";
+    try {
+      const parsed = new URL(url);
+      host = parsed.hostname;
+      path = `${parsed.pathname}${parsed.search}`;
+      protocol = parsed.protocol.replace(":", "");
+    } catch { }
+    return [
+      "  <item>",
+      `    <time>${escapeHtml(new Date().toUTCString())}</time>`,
+      `    <url><![CDATA[${url}]]></url>`,
+      `    <host ip=\"\">${escapeHtml(host)}</host>`,
+      `    <port>${protocol === "https" ? "443" : "80"}</port>`,
+      `    <protocol>${escapeHtml(protocol)}</protocol>`,
+      `    <path><![CDATA[${path}]]></path>`,
+      "    <status>0</status>",
+      "    <responselength>0</responselength>",
+      "    <mimetype></mimetype>",
+      "    <comment>Imported from Web X Sider</comment>",
+      "  </item>"
+    ].join("\n");
+  }).join("\n");
+  downloadFile("web-x-sider-burp-sitemap.xml", `<?xml version=\"1.0\"?>\n<items burpVersion=\"Web X Sider\" exportTime=\"${escapeHtml(new Date().toUTCString())}\">\n${items}\n</items>`, "application/xml");
+};
+
+exportMethodMap.onclick = () => {
+  const rows = ["METHOD,ENDPOINT,PARAMETERS,STATUS,CONFIDENCE"];
+  getVisibleFindings()
+    .filter(item => ["endpoint", "parameter"].includes(item.type))
+    .forEach(item => {
+      let url = item.value;
+      let params = "";
+      try {
+        const parsed = new URL(item.value.replace(/\[DYNAMIC\]$/, ""), item.source);
+        url = parsed.href;
+        params = [...parsed.searchParams.keys()].join("|");
+      } catch { }
+      const checks = item.methodChecks?.length ? item.methodChecks : [{ method: inferHttpMethod(url) || "GET", status: "", length: "" }];
+      checks.forEach(check => {
+        rows.push(`"${check.method}","${String(url).replace(/"/g, '""')}","${params.replace(/"/g, '""')}","${check.status || ""}","${getFindingConfidence(item)}"`);
+      });
+    });
+  downloadFile("web-x-sider-method-map.csv", rows.join("\n"), "text/csv");
+};
+
+saveBaselineBtn.onclick = () => {
+  const payload = buildSessionPayload("Baseline");
+  if (safeLocalStorageSet(BASELINE_KEY, JSON.stringify(payload))) {
+    showToast("Baseline saved for future diff scans.", "success");
+  }
+};
+
+compareBaselineBtn.onclick = () => {
+  const raw = localStorage.getItem(BASELINE_KEY);
+  if (!raw) return showToast("No baseline saved yet.", "warn");
+  try {
+    const baseline = JSON.parse(raw);
+    const oldKeys = new Set((baseline.allData || []).map(item => getFindingKey(item)));
+    const newKeys = new Set(state.allData.map(item => getFindingKey(item)));
+    const added = state.allData.filter(item => !oldKeys.has(getFindingKey(item)));
+    const removed = (baseline.allData || []).filter(item => !newKeys.has(getFindingKey(item)));
+    const report = [
+      "# Web X Sider Diff",
+      "",
+      `Baseline: ${baseline.savedAt || "unknown"}`,
+      `Current: ${new Date().toISOString()}`,
+      "",
+      `## New Findings (${added.length})`,
+      ...added.map(item => `- [${(item.severity || "low").toUpperCase()}] ${item.type}: ${item.value} (${item.source}:L${item.line})`),
+      "",
+      `## Removed Findings (${removed.length})`,
+      ...removed.map(item => `- [${(item.severity || "low").toUpperCase()}] ${item.type}: ${item.value} (${item.source}:L${item.line})`)
+    ].join("\n");
+    downloadFile("web-x-sider-diff.md", report, "text/markdown");
+    showToast(`Diff ready: ${added.length} new, ${removed.length} removed.`, "success");
+  } catch {
+    showToast("Baseline could not be loaded.", "error");
+  }
 };
 
 function getExportableUrls() {
@@ -3375,9 +4102,9 @@ exportFfuf.onclick = () => {
 copyHighFindings.onclick = async () => {
   try {
     await navigator.clipboard.writeText(buildHighRiskText());
-    alert("High and critical findings copied.");
+    showToast("High and critical findings copied.", "success");
   } catch {
-    alert("Copy failed. Use an exported report instead.");
+    showToast("Copy failed. Use an exported report instead.", "error");
   }
 };
 
@@ -3391,17 +4118,20 @@ function buildSessionPayload(name = "Web X Sider Session") {
     subdomainInput: subdomainInput?.value || "",
     allData: state.allData,
     hostChecks: state.hostChecks,
-    hiddenFindings: [...state.hiddenFindings],
-    findingNotes: state.findingNotes,
-    scanDiagnostic: state.scanDiagnostic
+  hiddenFindings: [...state.hiddenFindings],
+  findingNotes: state.findingNotes,
+  findingTags: state.findingTags,
+  scanDiagnostic: state.scanDiagnostic
   };
 }
 
 function restoreSessionPayload(payload) {
   state.allData = Array.isArray(payload.allData) ? payload.allData : [];
+  state.dedupKeys = new Set(state.allData.map(item => getFindingKey(item)));
   state.hostChecks = Array.isArray(payload.hostChecks) ? payload.hostChecks : [];
   state.hiddenFindings = new Set(payload.hiddenFindings || []);
   state.findingNotes = payload.findingNotes || {};
+  state.findingTags = payload.findingTags || {};
   state.scanDiagnostic = payload.scanDiagnostic || null;
   state.endpoints = new Set(state.allData.filter(item => item.type === "endpoint").map(item => item.value));
   state.secrets = new Set(state.allData.filter(item => item.type === "secret").map(item => item.value));
@@ -3429,38 +4159,70 @@ function getSessionIndex() {
 }
 
 function setSessionIndex(names) {
-  localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify([...new Set(names)].sort()));
+  safeLocalStorageSet(SESSION_INDEX_KEY, JSON.stringify([...new Set(names)].sort()));
 }
 
-saveSessionBtn.onclick = () => {
-  const name = (prompt("Session name:", `Scan ${new Date().toLocaleString()}`) || "").trim();
+saveSessionBtn.onclick = async () => {
+  const name = (await showPrompt("Session name:", `Scan ${new Date().toLocaleString()}`) || "").trim();
   if (!name) return;
   const payload = buildSessionPayload(name);
-  localStorage.setItem(SESSION_KEY, JSON.stringify(payload));
-  localStorage.setItem(`${SESSION_KEY}:${name}`, JSON.stringify(payload));
+  const serialized = JSON.stringify(payload);
+  if (!safeLocalStorageSet(SESSION_KEY, serialized)) return;
+  if (!safeLocalStorageSet(`${SESSION_KEY}:${name}`, serialized)) return;
   setSessionIndex([...getSessionIndex(), name]);
-  alert(`Scan session saved as "${name}".`);
+  showToast(`Session saved: "${name}"`, "success");
 };
 
 loadSessionBtn.onclick = () => {
   const names = getSessionIndex();
-  const selected = names.length
-    ? prompt(`Load session name:\n${names.join("\n")}`, names[names.length - 1])
-    : "";
-  const raw = selected
-    ? localStorage.getItem(`${SESSION_KEY}:${selected}`)
-    : localStorage.getItem(SESSION_KEY);
-  if (!raw) return alert("No saved session found in this browser.");
+  const panel = document.getElementById("session-list-panel");
+  const list = document.getElementById("session-list-items");
+  if (!names.length) { showToast("No saved sessions found.", "warn"); return; }
+  list.innerHTML = "";
+  names.forEach(name => {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,0.05);border-radius:8px;";
+    const label = document.createElement("span");
+    label.style.cssText = "flex:1;font-size:13px;color:rgba(255,255,255,0.85);";
+    label.textContent = name;
+    const loadBtn = document.createElement("button");
+    loadBtn.textContent = "Load";
+    loadBtn.style.cssText = "padding:4px 10px;background:#0dcaf0;border:none;border-radius:6px;color:#000;font-size:12px;cursor:pointer;";
+    loadBtn.onclick = () => window.loadNamedSession(name);
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "Delete";
+    deleteBtn.style.cssText = "padding:4px 10px;background:rgba(220,53,69,0.3);border:1px solid rgba(220,53,69,0.5);border-radius:6px;color:#ff6b6b;font-size:12px;cursor:pointer;";
+    deleteBtn.onclick = () => window.deleteNamedSession(name);
+    row.appendChild(label);
+    row.appendChild(loadBtn);
+    row.appendChild(deleteBtn);
+    list.appendChild(row);
+  });
+  panel.style.display = panel.style.display === "none" ? "block" : "none";
+};
+
+window.loadNamedSession = (name) => {
+  const raw = localStorage.getItem(`${SESSION_KEY}:${name}`);
+  if (!raw) { showToast(`Session "${name}" not found.`, "error"); return; }
   try {
-    const payload = JSON.parse(raw);
-    restoreSessionPayload(payload);
+    restoreSessionPayload(JSON.parse(raw));
+    showToast(`Session "${name}" loaded.`, "success");
+    document.getElementById("session-list-panel").style.display = "none";
   } catch {
-    alert("Saved session could not be loaded.");
+    showToast("Session could not be loaded.", "error");
   }
 };
 
-exportSessionBtn.onclick = () => {
-  const name = (prompt("Export session name:", "Web X Sider Session") || "Web X Sider Session").trim();
+window.deleteNamedSession = async (name) => {
+  if (!(await showConfirm(`Delete session "${name}"?`))) return;
+  localStorage.removeItem(`${SESSION_KEY}:${name}`);
+  setSessionIndex(getSessionIndex().filter(n => n !== name));
+  showToast(`Session "${name}" deleted.`, "success");
+  loadSessionBtn.click();
+};
+
+exportSessionBtn.onclick = async () => {
+  const name = (await showPrompt("Export session name:", "Web X Sider Session") || "Web X Sider Session").trim();
   const payload = buildSessionPayload(name);
   downloadFile("web-x-sider-session.json", JSON.stringify(payload, null, 2), "application/json");
 };
@@ -3474,7 +4236,7 @@ importSessionFile?.addEventListener("change", async (event) => {
     const payload = JSON.parse(await file.text());
     restoreSessionPayload(payload);
   } catch {
-    alert("Session file could not be imported.");
+    showToast("Session file could not be imported.", "error");
   } finally {
     event.target.value = "";
   }
