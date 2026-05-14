@@ -113,6 +113,8 @@ const workflowImportStatus = document.getElementById("workflowImportStatus");
 const applyImportBtn = document.getElementById("applyImportBtn");
 const clearImportBtn = document.getElementById("clearImportBtn");
 const waybackFetchBtn = document.getElementById("waybackFetchBtn");
+const waybackStatus = document.getElementById("waybackStatus");
+const waybackResults = document.getElementById("waybackResults");
 
 const allResults = [];
 const scannedJs = new Set(); // avoid duplicate scans across sources
@@ -3796,33 +3798,116 @@ workflowImportFile?.addEventListener("change", async (event) => {
 });
 updateInputPreviews();
 
-async function fetchWaybackRows(apiUrl) {
+function setWaybackStatus(message, tone = "info") {
+  if (!waybackStatus) return;
+  const colors = { info: "var(--text-muted)", warn: "var(--warning)", error: "var(--danger)", success: "var(--success)" };
+  waybackStatus.style.color = colors[tone] || colors.info;
+  waybackStatus.innerText = message;
+}
+
+function renderWaybackOutput(urls, sourceLabel = "Wayback") {
+  if (!waybackResults) return;
+  if (!urls.length) {
+    waybackResults.style.display = "none";
+    waybackResults.innerHTML = "";
+    return;
+  }
+  const sample = urls.slice(0, 80);
+  waybackResults.innerHTML = `
+    <div class="wayback-results-header">
+      <span>${escapeHtml(sourceLabel)} output</span>
+      <span>${escapeHtml(urls.length)} URLs</span>
+    </div>
+    <pre>${escapeHtml(sample.join("\n"))}${urls.length > sample.length ? `\n... ${urls.length - sample.length} more added to Imported URLs` : ""}</pre>
+  `;
+  waybackResults.style.display = "block";
+}
+
+function buildWaybackApi(host, includeSubdomains = false) {
+  const cdxParams = new URLSearchParams({
+    url: includeSubdomains ? `*.${host}/*` : `${host}/*`,
+    output: "json",
+    fl: "original",
+    collapse: "urlkey",
+    limit: includeSubdomains ? "2000" : "1000"
+  });
+  return `https://web.archive.org/cdx/search/cdx?${cdxParams.toString()}`;
+}
+
+function fetchWaybackJsonp(apiUrl, timeoutMs = 9000) {
+  return new Promise((resolve, reject) => {
+    const callbackName = `__webXSiderWayback_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const script = document.createElement("script");
+    const cleanup = () => {
+      delete window[callbackName];
+      script.remove();
+    };
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error("Wayback JSONP timed out"));
+    }, timeoutMs);
+
+    window[callbackName] = (data) => {
+      clearTimeout(timer);
+      cleanup();
+      resolve(Array.isArray(data) ? data : []);
+    };
+
+    script.onerror = () => {
+      clearTimeout(timer);
+      cleanup();
+      reject(new Error("Wayback JSONP request failed"));
+    };
+
+    const url = new URL(apiUrl);
+    url.searchParams.set("output", "json");
+    url.searchParams.set("callback", callbackName);
+    script.src = url.href;
+    document.head.appendChild(script);
+  });
+}
+
+async function fetchWaybackRows(apiUrls) {
   const attempts = [
-    () => fetch(apiUrl, { headers: { Accept: "application/json" } }),
-    () => fetchTarget(apiUrl, { headers: { Accept: "application/json" } })
+    (apiUrl) => fetchWaybackJsonp(apiUrl),
+    (apiUrl) => fetch(apiUrl, { headers: { Accept: "application/json" } }),
+    (apiUrl) => fetchTarget(apiUrl, { headers: { Accept: "application/json" } })
   ];
   const errors = [];
+  const collected = [];
 
-  for (const attempt of attempts) {
-    try {
-      const res = await attempt();
-      const text = await res.text();
-      if (!res.ok) {
-        errors.push(`HTTP ${res.status}: ${text.slice(0, 160)}`);
-        continue;
-      }
+  for (const apiUrl of apiUrls) {
+    for (const attempt of attempts) {
       try {
-        const parsed = JSON.parse(text);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch {
-        errors.push(`Wayback returned non-JSON: ${text.slice(0, 160)}`);
+        const result = await attempt(apiUrl);
+        if (Array.isArray(result)) {
+          collected.push(...result);
+          break;
+        }
+
+        const res = result;
+        const text = await res.text();
+        if (!res.ok) {
+          errors.push(`HTTP ${res.status}: ${text.replace(/\s+/g, " ").slice(0, 180)}`);
+          continue;
+        }
+        try {
+          const parsed = JSON.parse(text);
+          if (Array.isArray(parsed)) {
+            collected.push(...parsed);
+            break;
+          }
+        } catch {
+          errors.push(`Wayback returned non-JSON: ${text.replace(/\s+/g, " ").slice(0, 180)}`);
+        }
+      } catch (error) {
+        errors.push(error.message || "request failed");
       }
-    } catch (error) {
-      errors.push(error.message || "request failed");
     }
   }
 
-  throw new Error(errors.join(" | "));
+  if (collected.length) return collected;
+  throw new Error([...new Set(errors)].slice(0, 4).join(" | "));
 }
 
 waybackFetchBtn?.addEventListener("click", async () => {
@@ -3831,27 +3916,31 @@ waybackFetchBtn?.addEventListener("click", async () => {
   if (!/^https?:\/\//i.test(siteUrl)) siteUrl = `https://${siteUrl}`;
   try {
     const host = new URL(siteUrl).hostname.replace(/^www\./, "");
-    const cdxParams = new URLSearchParams({
-      url: `*.${host}/*`,
-      output: "json",
-      fl: "original",
-      collapse: "urlkey",
-      limit: "5000"
-    });
-    const api = `https://web.archive.org/cdx/search/cdx?${cdxParams.toString()}`;
+    const apiUrls = [buildWaybackApi(host, false), buildWaybackApi(host, true)];
+    renderWaybackOutput([]);
+    setWaybackStatus(`Fetching Wayback URLs for ${host}...`, "info");
     showToast("Fetching Wayback URLs...", "info", 2000);
-    const rows = await fetchWaybackRows(api);
-    const urls = [...new Set(rows.slice(1).map(row => Array.isArray(row) ? row[0] : row).filter(Boolean))];
+    const rows = await fetchWaybackRows(apiUrls);
+    const urls = [...new Set(rows
+      .map(row => Array.isArray(row) ? row[0] : row)
+      .filter(url => /^https?:\/\//i.test(String(url || "")))
+    )];
     if (!urls.length) {
+      setWaybackStatus("Wayback returned no URLs for this host.", "warn");
       showToast("Wayback returned no URLs for this host.", "warn");
       return;
     }
     const existing = importedUrlInput.value.trim();
     importedUrlInput.value = [existing, ...urls].filter(Boolean).join(existing ? "\n" : "");
     updateInputPreviews();
+    renderWaybackOutput(urls);
+    setWaybackStatus(`Imported ${urls.length} Wayback URLs into Imported URLs.`, "success");
     showToast(`Imported ${urls.length} Wayback URLs.`, "success");
   } catch (error) {
-    showToast(`Wayback fetch failed: ${error.message}`, "error");
+    const message = error.message || "Unknown Wayback error";
+    renderWaybackOutput([]);
+    setWaybackStatus(`Wayback fetch failed: ${message}`, "error");
+    showToast(`Wayback fetch failed. See the Wayback output message.`, "error", 6000);
   }
 });
 

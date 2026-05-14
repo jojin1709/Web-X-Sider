@@ -1865,6 +1865,35 @@ body {
   line-height: 1.45;
 }
 
+.wayback-results-preview {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid rgba(14, 202, 240, 0.25);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.wayback-results-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: var(--accent-cyan);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.wayback-results-preview pre {
+  max-height: 180px;
+  overflow: auto;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .prober-results-list {
   margin-top: var(--space-lg);
   background: var(--glass-bg);
