@@ -5,6 +5,13 @@ Thumbs.db
 server.js
 server.py
 cloudflare-worker-proxy.js
+!workers/
+!workers/cloudflare-worker-proxy.js
+
+# local proxy experiments / generated worker app
+supabase-proxy/
+super-proxy/
+node_modules/
 
 # wrangler files
 .wrangler
@@ -13,3 +20,4 @@ cloudflare-worker-proxy.js
 .env*
 !.env.example
 wrangler.jsonc
+!wrangler.jsonc

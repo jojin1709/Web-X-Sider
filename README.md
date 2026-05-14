@@ -135,6 +135,10 @@ http://127.0.0.1:5501/
 
 Opening `index.html` directly, or serving with plain `python -m http.server`, can load the website but break the tools because browsers block cross-origin requests. The local proxy helper is intentionally not published in this public GitHub Pages repo.
 
+### Cloudflare Worker Proxy
+
+The Cloudflare Worker proxy lives in [`workers/cloudflare-worker-proxy.js`](workers/cloudflare-worker-proxy.js). Wrangler is configured to use that file as the worker entry point.
+
 ### 🕷️ Smart Crawler
 
 1. Visit **[https://jojin1709.github.io/Web-X-Sider/](https://jojin1709.github.io/Web-X-Sider/)**
