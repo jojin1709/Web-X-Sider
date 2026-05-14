@@ -2312,6 +2312,45 @@ function renderProberLine(path, status, fullUrl, length, note = "", body = "") {
   proberResults.appendChild(line);
 }
 
+function renderProberLineV2(path, status, fullUrl, length, note = "", body = "") {
+  const line = document.createElement("div");
+  line.className = "prober-line";
+
+  let statusClass = "status-error";
+  if (status === 200) statusClass = "status-200";
+  else if (status === 403) statusClass = "status-403";
+  else if (status === 401) statusClass = "status-401";
+  else if (status === 404) statusClass = "status-404";
+
+  const lengthDisplay = length !== undefined ? `<span class="prober-length">[${escapeHtml(length)}]</span>` : "";
+  const noteDisplay = note ? `<span class="prober-note">${escapeHtml(note)}</span>` : "";
+  let openBtnHtml = "";
+  if (status === 200) {
+    openBtnHtml = `<a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener noreferrer" class="prober-open-btn-200"><span>Open</span><i class="fas fa-up-right-from-square"></i></a>`;
+  } else if (status === 403 || status === 401) {
+    openBtnHtml = `<a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener noreferrer" class="prober-open-btn-403"><span>Open</span><i class="fas fa-up-right-from-square"></i></a>`;
+  }
+
+  const viewerHtml = body && (status === 200 || status === 403 || status === 401)
+    ? `<details class="prober-response"><summary>Response body</summary><pre>${escapeHtml(String(body).slice(0, 12000))}</pre></details>`
+    : "";
+
+  line.innerHTML = `
+    <div class="prober-path">${escapeHtml(path)}${noteDisplay}</div>
+    <div class="prober-line-actions">
+      <span class="prober-status ${statusClass}">${escapeHtml(status)}</span>
+      ${openBtnHtml}
+      ${lengthDisplay}
+    </div>
+    ${viewerHtml}
+  `;
+
+  if (proberResults.querySelector(".status")) proberResults.innerHTML = "";
+  proberResults.appendChild(line);
+}
+
+renderProberLine = renderProberLineV2;
+
 // Bug Bounty Recon Suite
 const reconUrlInput = document.getElementById("reconUrlInput");
 const reconUrlList = document.getElementById("reconUrlList");

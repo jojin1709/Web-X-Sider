@@ -1873,15 +1873,18 @@ body {
   padding: var(--space-sm);
   max-height: 450px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .prober-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px 14px;
   padding: 14px 16px;
   border-radius: var(--radius-sm);
   transition: var(--transition-fast);
+  min-width: 0;
 }
 
 .prober-line:hover {
@@ -1892,6 +1895,34 @@ body {
   font-family: 'Inter', monospace;
   font-size: 0.9rem;
   color: var(--text-secondary);
+  min-width: 0;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  padding-top: 3px;
+}
+
+.prober-note {
+  display: inline-block;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  margin-left: 8px;
+}
+
+.prober-line-actions {
+  display: grid;
+  grid-template-columns: auto auto minmax(68px, auto);
+  align-items: center;
+  justify-content: end;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.prober-length {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-family: monospace;
+  text-align: right;
 }
 
 .prober-status {
@@ -1899,6 +1930,8 @@ body {
   border-radius: var(--radius-full);
   font-weight: 600;
   font-size: 0.8rem;
+  min-width: 54px;
+  text-align: center;
 }
 
 .status-200 {
@@ -1928,12 +1961,15 @@ body {
 
 .prober-open-btn-200,
 .prober-open-btn-403 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   text-decoration: none;
   padding: 4px 14px;
   border-radius: var(--radius-full);
   font-size: 0.75rem;
   font-weight: 600;
-  margin-left: 10px;
   transition: var(--transition-fast);
 }
 
@@ -1950,6 +1986,32 @@ body {
 .prober-open-btn-200:hover,
 .prober-open-btn-403:hover {
   transform: scale(1.05);
+}
+
+.prober-response {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin-top: 2px;
+}
+
+.prober-response summary {
+  cursor: pointer;
+  color: var(--accent-cyan);
+  font-size: 0.85rem;
+  width: max-content;
+}
+
+.prober-response pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 260px;
+  overflow: auto;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 8px;
+  color: var(--text-secondary);
 }
 
 /* Scrollbar */
@@ -2455,16 +2517,14 @@ body {
 @media (max-width: 768px) {
 
   .prober-line {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-sm);
   }
 
-  .prober-line>div {
+  .prober-line-actions {
     width: 100%;
-    display: flex;
     justify-content: space-between;
-    align-items: center;
+    grid-template-columns: auto auto auto;
   }
 
   .length-filters {
