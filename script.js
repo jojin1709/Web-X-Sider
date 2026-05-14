@@ -3757,17 +3757,56 @@ workflowImportFile?.addEventListener("change", async (event) => {
 });
 updateInputPreviews();
 
+async function fetchWaybackRows(apiUrl) {
+  const attempts = [
+    () => fetch(apiUrl, { headers: { Accept: "application/json" } }),
+    () => fetchTarget(apiUrl, { headers: { Accept: "application/json" } })
+  ];
+  const errors = [];
+
+  for (const attempt of attempts) {
+    try {
+      const res = await attempt();
+      const text = await res.text();
+      if (!res.ok) {
+        errors.push(`HTTP ${res.status}: ${text.slice(0, 160)}`);
+        continue;
+      }
+      try {
+        const parsed = JSON.parse(text);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        errors.push(`Wayback returned non-JSON: ${text.slice(0, 160)}`);
+      }
+    } catch (error) {
+      errors.push(error.message || "request failed");
+    }
+  }
+
+  throw new Error(errors.join(" | "));
+}
+
 waybackFetchBtn?.addEventListener("click", async () => {
   let siteUrl = urlInput.value.trim();
   if (!siteUrl) return showToast("Enter a valid URL", "warn");
   if (!/^https?:\/\//i.test(siteUrl)) siteUrl = `https://${siteUrl}`;
   try {
     const host = new URL(siteUrl).hostname.replace(/^www\./, "");
-    const api = `https://web.archive.org/cdx/search/cdx?url=*.${encodeURIComponent(host)}/*&output=json&fl=original&collapse=urlkey`;
+    const cdxParams = new URLSearchParams({
+      url: `*.${host}/*`,
+      output: "json",
+      fl: "original",
+      collapse: "urlkey",
+      limit: "5000"
+    });
+    const api = `https://web.archive.org/cdx/search/cdx?${cdxParams.toString()}`;
     showToast("Fetching Wayback URLs...", "info", 2000);
-    const res = await fetch(api);
-    const rows = await res.json();
-    const urls = rows.slice(1).map(row => Array.isArray(row) ? row[0] : row).filter(Boolean);
+    const rows = await fetchWaybackRows(api);
+    const urls = [...new Set(rows.slice(1).map(row => Array.isArray(row) ? row[0] : row).filter(Boolean))];
+    if (!urls.length) {
+      showToast("Wayback returned no URLs for this host.", "warn");
+      return;
+    }
     const existing = importedUrlInput.value.trim();
     importedUrlInput.value = [existing, ...urls].filter(Boolean).join(existing ? "\n" : "");
     updateInputPreviews();
