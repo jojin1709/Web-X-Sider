@@ -139,6 +139,8 @@ Opening `index.html` directly, or serving with plain `python -m http.server`, ca
 
 The Cloudflare Worker proxy lives in [`workers/cloudflare-worker-proxy.js`](workers/cloudflare-worker-proxy.js). Wrangler is configured to use that file as the worker entry point.
 
+Optional FlareSolverr fallback is supported for authorized scans that hit Cloudflare/DDoS-Guard style challenge pages. For local use, run FlareSolverr on `http://127.0.0.1:8191/v1`, start `server.py`, then enable **Settings -> FlareSolverr fallback** in the UI. For the Worker proxy, configure a `FLARESOLVERR_URL` environment variable that points to your private FlareSolverr endpoint.
+
 ### 🕷️ Smart Crawler
 
 1. Visit **[https://jojin1709.github.io/Web-X-Sider/](https://jojin1709.github.io/Web-X-Sider/)**

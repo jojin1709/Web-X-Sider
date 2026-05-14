@@ -1,5 +1,6 @@
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import ipaddress
+import json
 import socket
 import time
 from collections import defaultdict
@@ -17,6 +18,8 @@ HOP_BY_HOP_HEADERS = {
     "trailers",
     "transfer-encoding",
     "upgrade",
+    "content-encoding",
+    "content-length",
 }
 
 BLOCKED_NETWORKS = [
@@ -54,6 +57,17 @@ _rate_limiter = RateLimiter()
 
 def is_ssrf_safe(hostname):
     if not hostname:
+        return False
+
+
+def is_flaresolverr_endpoint_safe(endpoint):
+    try:
+        parsed = urlparse(endpoint)
+        host = parsed.hostname or ""
+        if parsed.scheme not in ("http", "https"):
+            return False
+        return host in {"localhost", "127.0.0.1", "::1"}
+    except Exception:
         return False
     try:
         resolved = socket.getaddrinfo(hostname, None)
@@ -98,6 +112,8 @@ class WebXSiderHandler(SimpleHTTPRequestHandler):
             return
 
         origin_values = parse_qs(parsed.query).get("origin")
+        solver_values = parse_qs(parsed.query).get("solver")
+        fs_url_values = parse_qs(parsed.query).get("fs_url")
         target_url = unquote(target_values[0])
         target = urlparse(target_url)
         if target.scheme not in ("http", "https"):
@@ -105,6 +121,10 @@ class WebXSiderHandler(SimpleHTTPRequestHandler):
             return
         if not is_ssrf_safe(target.hostname):
             self.send_error(403, "Target resolves to a blocked IP range")
+            return
+
+        if solver_values and solver_values[0] == "flaresolverr":
+            self.proxy_with_flaresolverr(target_url, "GET", b"", fs_url_values[0] if fs_url_values else "")
             return
 
         custom_ua = self.headers.get("X-Web-X-Sider-User-Agent", "WebXSider-local/2.0")
@@ -156,6 +176,8 @@ class WebXSiderHandler(SimpleHTTPRequestHandler):
             return
 
         target_url = unquote(target_values[0])
+        solver_values = parse_qs(parsed.query).get("solver")
+        fs_url_values = parse_qs(parsed.query).get("fs_url")
         target = urlparse(target_url)
         if target.scheme not in ("http", "https"):
             self.send_error(400, "Only http and https URLs are allowed")
@@ -166,6 +188,10 @@ class WebXSiderHandler(SimpleHTTPRequestHandler):
 
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(min(content_length, 10 * 1024 * 1024))
+        if solver_values and solver_values[0] == "flaresolverr":
+            self.proxy_with_flaresolverr(target_url, "POST", body, fs_url_values[0] if fs_url_values else "")
+            return
+
         custom_ua = self.headers.get("X-Web-X-Sider-User-Agent", "WebXSider-local/2.0")
         request_headers = {
             "User-Agent": custom_ua,
@@ -201,6 +227,61 @@ class WebXSiderHandler(SimpleHTTPRequestHandler):
                 cookie_index += 1
             elif lowered not in HOP_BY_HOP_HEADERS:
                 self.send_header(name, value)
+
+    def proxy_with_flaresolverr(self, target_url, method, body, fs_url):
+        flaresolverr_url = unquote(fs_url or "").strip() or "http://127.0.0.1:8191/v1"
+        if not is_flaresolverr_endpoint_safe(flaresolverr_url):
+            self.send_error(400, "FlareSolverr endpoint must be local, for example http://127.0.0.1:8191/v1")
+            return
+
+        payload = {
+            "cmd": "request.post" if method == "POST" else "request.get",
+            "url": target_url,
+            "maxTimeout": 60000,
+            "disableMedia": True,
+        }
+        if method == "POST":
+            payload["postData"] = body.decode("utf-8", errors="replace")
+
+        data = json.dumps(payload).encode("utf-8")
+        request = Request(
+            flaresolverr_url,
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            data=data,
+            method="POST",
+        )
+
+        try:
+            with urlopen(request, timeout=75) as response:
+                raw = response.read()
+            parsed = json.loads(raw.decode("utf-8", errors="replace"))
+            solution = parsed.get("solution") or {}
+            response_body = (solution.get("response") or "").encode("utf-8", errors="replace")
+            status = int(solution.get("status") or 200)
+            headers = solution.get("headers") or {}
+
+            self.send_response(status)
+            self.send_header("X-Web-X-Sider-FlareSolverr", "local")
+            for name, value in headers.items():
+                lowered = str(name).lower()
+                if lowered in HOP_BY_HOP_HEADERS or lowered == "set-cookie":
+                    continue
+                self.send_header(str(name), str(value))
+            for index, cookie in enumerate(solution.get("cookies") or []):
+                name = cookie.get("name")
+                value = cookie.get("value")
+                if name and value:
+                    self.send_header(f"X-Web-X-Sider-Set-Cookie-{index}", f"{name}={value}")
+            self.end_headers()
+            self.wfile.write(response_body)
+        except HTTPError as error:
+            self.send_error(error.code, f"FlareSolverr request failed: {error.reason}")
+        except URLError as error:
+            self.send_error(502, f"FlareSolverr is not reachable: {error.reason}")
+        except TimeoutError:
+            self.send_error(504, "FlareSolverr request timed out")
+        except Exception as error:
+            self.send_error(502, f"FlareSolverr failed: {error}")
 
     def forwardable_client_headers(self):
         allowed = {"authorization", "x-api-key", "x-auth-token", "cookie"}

@@ -11,6 +11,7 @@ cloudflare-worker-proxy.js
 # local proxy experiments / generated worker app
 supabase-proxy/
 super-proxy/
+FlareSolverr-master/
 node_modules/
 
 # wrangler files

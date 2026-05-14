@@ -48,7 +48,7 @@
   }
   </script>
 
-  <link rel="stylesheet" href="style.css?v=20260514-waybackui1" />
+  <link rel="stylesheet" href="style.css?v=20260514-flaresolverr1" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -710,6 +710,18 @@
             <input type="url" id="setting-proxyUrl" placeholder="https://your-worker.workers.dev/?url=" />
           </div>
           <div class="advanced-scan-field glass-input">
+            <label>FlareSolverr endpoint</label>
+            <input type="url" id="setting-flaresolverrUrl" placeholder="http://127.0.0.1:8191/v1" />
+            <div class="field-status">Optional. Used as a fallback after bot-protection pages are detected.</div>
+          </div>
+          <div class="advanced-scan-field glass-input">
+            <label>FlareSolverr fallback</label>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:8px;color:rgba(255,255,255,0.75);font-size:13px;">
+              <input type="checkbox" id="setting-flaresolverrEnabled" />
+              Enable challenge-solver retry for authorized scans
+            </label>
+          </div>
+          <div class="advanced-scan-field glass-input">
             <label>Custom User-Agent</label>
             <input type="text" id="setting-userAgent" placeholder="Leave blank for default" />
           </div>
@@ -756,7 +768,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/js-beautify@1.15.1/js/lib/beautify.js"></script>
-  <script src="script.js?v=20260514-waybackui1"></script>
+  <script src="script.js?v=20260514-flaresolverr1"></script>
   <script>
     // Mobile menu toggle
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');

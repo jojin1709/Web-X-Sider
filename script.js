@@ -771,6 +771,8 @@ function saveSettings() {
     proberDelay: parseInt(document.getElementById("setting-proberDelay")?.value, 10) || 450,
     concurrency: Math.max(1, Math.min(20, parseInt(document.getElementById("setting-concurrency")?.value, 10) || 5)),
     proxyUrl: document.getElementById("setting-proxyUrl")?.value?.trim() || "",
+    flaresolverrUrl: document.getElementById("setting-flaresolverrUrl")?.value?.trim() || "",
+    flaresolverrEnabled: Boolean(document.getElementById("setting-flaresolverrEnabled")?.checked),
     userAgent: document.getElementById("setting-userAgent")?.value?.trim() || "",
     authHeaders: document.getElementById("setting-authHeaders")?.value?.trim() || "",
     customSecrets: document.getElementById("setting-customSecrets")?.value?.trim() || ""
@@ -809,6 +811,14 @@ function getRequestConcurrency() {
   return window._REQUEST_CONCURRENCY || 5;
 }
 
+function isFlareSolverrEnabled() {
+  return Boolean(loadSettings().flaresolverrEnabled);
+}
+
+function getFlareSolverrUrl() {
+  return (loadSettings().flaresolverrUrl || "http://127.0.0.1:8191/v1").trim();
+}
+
 function mapWithConcurrency(items, limit, worker) {
   const results = new Array(items.length);
   let nextIndex = 0;
@@ -829,6 +839,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (s.proberDelay !== undefined) document.getElementById("setting-proberDelay").value = s.proberDelay;
   if (s.concurrency !== undefined) document.getElementById("setting-concurrency").value = s.concurrency;
   if (s.proxyUrl) document.getElementById("setting-proxyUrl").value = s.proxyUrl;
+  if (s.flaresolverrUrl) document.getElementById("setting-flaresolverrUrl").value = s.flaresolverrUrl;
+  if (s.flaresolverrEnabled !== undefined) document.getElementById("setting-flaresolverrEnabled").checked = Boolean(s.flaresolverrEnabled);
   if (s.userAgent) document.getElementById("setting-userAgent").value = s.userAgent;
   if (s.authHeaders) document.getElementById("setting-authHeaders").value = s.authHeaders;
   if (s.customSecrets) document.getElementById("setting-customSecrets").value = s.customSecrets;
@@ -867,6 +879,15 @@ const getFetchCandidates = (url, proxyParams = {}) => {
       viaProxy: true,
       requiresProxyHeader: true
     });
+    if (isFlareSolverrEnabled()) {
+      candidates.push({
+        url: `/proxy?url=${encodedUrl}${extraProxyQuery}&solver=flaresolverr&fs_url=${encodeURIComponent(getFlareSolverrUrl())}`,
+        label: "local FlareSolverr route",
+        viaProxy: true,
+        requiresProxyHeader: true,
+        solver: "flaresolverr"
+      });
+    }
   }
 
   REMOTE_PROXY_ENDPOINTS.forEach(proxy => {
@@ -876,6 +897,15 @@ const getFetchCandidates = (url, proxyParams = {}) => {
       viaProxy: true,
       requiresProxyHeader: false
     });
+    if (isFlareSolverrEnabled()) {
+      candidates.push({
+        url: `${proxy}${encodedUrl}${extraProxyQuery}&solver=flaresolverr`,
+        label: "remote FlareSolverr route",
+        viaProxy: true,
+        requiresProxyHeader: false,
+        solver: "flaresolverr"
+      });
+    }
   });
 
   const seen = new Set();
@@ -909,9 +939,19 @@ async function fetchTarget(url, options = {}) {
         continue;
       }
 
-      if (candidate.viaProxy && [502, 504].includes(res.status)) {
+      if (candidate.viaProxy && [501, 502, 504].includes(res.status)) {
         errors.push(`${candidate.label} returned ${res.status}`);
         continue;
+      }
+
+      if (isFlareSolverrEnabled() && !candidate.solver && [200, 401, 403, 429, 503].includes(res.status)) {
+        try {
+          const probeText = await res.clone().text();
+          if (isBotProtectionPage(probeText)) {
+            errors.push(`${candidate.label} hit target protection; retrying via FlareSolverr route`);
+            continue;
+          }
+        } catch { }
       }
 
       return res;
