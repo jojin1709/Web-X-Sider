@@ -45,6 +45,7 @@ function copyResponseHeaders(sourceHeaders, extra = {}) {
   sourceHeaders.forEach((value, key) => {
     const lowered = key.toLowerCase();
     if (HOP_BY_HOP_HEADERS.has(lowered)) return;
+    if (lowered.startsWith("access-control-")) return;
     if (lowered === "set-cookie") headers.set("X-Web-X-Sider-Set-Cookie-0", value);
     else headers.set(key, value);
   });
