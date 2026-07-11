@@ -1,0 +1,10 @@
+supabase-proxy/
+super-proxy/
+FlareSolverr-master/
+node_modules/
+.git/
+.wrangler/
+workers/
+*.py
+*.b64
+*.log

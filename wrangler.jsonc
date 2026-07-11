@@ -3,13 +3,7 @@
   "name": "web-x-sider",
   "main": "workers/cloudflare-worker-proxy.js",
   "compatibility_date": "2026-05-03",
-  "observability": {
-    "enabled": true
-  },
-  "assets": {
-    "directory": "."
-  },
-  "compatibility_flags": [
-    "nodejs_compat"
-  ]
+  "observability": { "enabled": true },
+  "assets": { "directory": ".", "run_worker_first": true },
+  "compatibility_flags": ["nodejs_compat"]
 }

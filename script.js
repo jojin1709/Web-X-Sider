@@ -749,7 +749,7 @@ const directoryfyUrl = (url) => {
 };
 
 const REMOTE_PROXY_ENDPOINTS = [
-  "https://fragrant-frog-b197.bugbountytestinghacker.workers.dev/?url="
+  "https://web-x-sider.mmkoji856.workers.dev/?url="
 ];
 
 const LOCAL_PROXY_HEADER = "x-web-x-sider-proxy";
