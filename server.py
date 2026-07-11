@@ -58,6 +58,16 @@ _rate_limiter = RateLimiter()
 def is_ssrf_safe(hostname):
     if not hostname:
         return False
+    try:
+        resolved = socket.getaddrinfo(hostname, None)
+        for family, type_, proto, canonname, sockaddr in resolved:
+            ip = ipaddress.ip_address(sockaddr[0])
+            for blocked in BLOCKED_NETWORKS:
+                if ip in blocked:
+                    return False
+        return True
+    except Exception:
+        return False
 
 
 def is_flaresolverr_endpoint_safe(endpoint):
@@ -67,16 +77,6 @@ def is_flaresolverr_endpoint_safe(endpoint):
         if parsed.scheme not in ("http", "https"):
             return False
         return host in {"localhost", "127.0.0.1", "::1"}
-    except Exception:
-        return False
-    try:
-        resolved = socket.getaddrinfo(hostname, None)
-        for family, type_, proto, canonname, sockaddr in resolved:
-            ip = ipaddress.ip_address(sockaddr[0])
-            for blocked in BLOCKED_NETWORKS:
-                if ip in blocked:
-                    return False
-        return True
     except Exception:
         return False
 
