@@ -1,205 +1,113 @@
 #  <img width="1254" height="1254" alt="favicon" src="https://github.com/user-attachments/assets/2e32121d-e68f-4561-82a1-8aef66bcbbf2" />
-Web X Sider V2.0 - Advanced JavaScript Crawler & Endpoint Discovery
+Web X Sider V2.5 - Advanced JavaScript Crawler, Endpoint Discovery & Bug Bounty Toolkit
 
 ---
 
-<div align="center">
+## Live Demo
 
-![Web X Sider](Web-X-Sider-cover.png)
-
-**The ultimate client-side reconnaissance tool for security researchers. Extract hidden API routes, sensitive parameters, and hardcoded secrets instantly from any website.**
-
-**Built for recon - Fast, lightweight and 100% client-side.**
-
-[![Built with](https://img.shields.io/badge/Built%20with-HTML%20%7C%20CSS%20%7C%20JavaScript-blue?style=for-the-badge&logo=javascript)](https://jojin1709.github.io/Web-X-Sider/)  
-[![GitHub](https://img.shields.io/badge/GitHub-jojin1709%2FWeb--X--Sider-181717?style=for-the-badge&logo=github)](https://github.com/jojin1709/Web-X-Sider)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Jojin%20John-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/jojin-john-74386b34a/)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
-
-</div>
+**[https://web-x-sider.mmkoji856.workers.dev](https://web-x-sider.mmkoji856.workers.dev)**
 
 ---
 
-## 🌐 Live
+## What's New in V2.5
 
-👉 Try Web X Sider V2.0 now:  
-**[https://jojin1709.github.io/Web-X-Sider/](https://jojin1709.github.io/Web-X-Sider/)**
+### Bug Bounty Toolkit (9 new tools)
+- **JS Diff Monitor** — Watch JS/page URLs for changes over time. Detects new endpoints/secrets between snapshots. Auto-check mode + Discord/Slack alerts.
+- **JWT Lab** — Decode header/payload, check expiry, brute-force weak HMAC secrets (35 common keys), forge `alg:none` token, fire it at a target URL — all in-browser.
+- **Subdomain Takeover Scanner** — 65-service fingerprint DB (GitHub Pages, Heroku, S3, Azure, Netlify, Vercel, Render, Fly.io…). DNS-over-HTTPS CNAME lookups + dangling NXDOMAIN detection.
+- **CVE Correlator** — Maps Server/X-Powered-By headers or pasted tech strings against 28 high-signal CVEs (Log4Shell, Spring4Shell, Drupalgeddon2, ProxyShell, MOVEit, Heartbleed…) with NVD links.
+- **Batch Scanner** — 50+ subdomains at once. Quick mode (title/server/tech) or Prober mode (+ 8 sensitive paths). CSV export.
+- **IDOR / Range Tester** — `https://api.target.com/orders/{id}` style fuzzing. Up to 300 IDs, anomaly detection by status+length signature diff. CSV export.
+- **Auth Matrix Tester** — Same request, multiple role headers (Anonymous/User/Admin). Flags identical responses as possible authorization bypass.
+- **Webhook Alerts** — Discord/Slack incoming webhook. Auto-send on JS changes, takeovers, auth-order findings. Manual scan summary.
+- **Visual Snapshot** — WordPress mshots screenshots of targets. Re-capture and compare over time. No API key needed.
 
-## Links
-
-- **GitHub:** [https://github.com/jojin1709/Web-X-Sider](https://github.com/jojin1709/Web-X-Sider)
-- **LinkedIn:** [https://www.linkedin.com/in/jojin-john-74386b34a/](https://www.linkedin.com/in/jojin-john-74386b34a/)
-
----
-
-## 🚀 Major Updates (V2.0)
-
-Web X Sider V2.0 is a massive evolution, transforming from a simple scraper into a proactive reconnaissance suite.
-
-### ✨ Key Features:
-
-- **Sensitive Path Prober**: Automated checks for **500+ critical paths** including `.env`, `.git/config`, `phpinfo.php`, backups, and cloud configurations. Features live response length filtering, instantaneous stop controls, and one-click inspection for 200/403 responses.
-- **Bug Bounty Recon Suite**: One-click checks for security headers, CORS origin reflection, exposed source maps, endpoint liveness, risky parameters, tech fingerprints, and interesting response signals.
-- **Recon Discovery Modules**: Real target-derived robots.txt/sitemap parsing, OpenAPI/Swagger parsing, GraphQL surface checks, JWT decoding, and client storage token-signal detection.
-- **Custom Wordlist Prober**: Add your own paths to the built-in sensitive path checks without fake/demo data.
-- **Scope Manager & URL Import**: Keep scans inside authorized scope and import URLs from tools like `gau`, `waybackurls`, `katana`, and `hakrawler`.
-- **Workflow Import**: Import HAR files, Burp/ZAP proxy history, ffuf output, and raw URL lists into scan inputs.
-- **Priority Dashboard**: Automatically groups real findings into Critical, High, Medium, and Low buckets.
-- **Bug Bounty Report Export**: Generates a triage-style Markdown report with evidence, severity, and validation notes.
-- **Finding Workflow Controls**: Filter by severity, hide false positives from exports, add analyst notes, and copy a single finding as a report-ready block.
-- **Prober Presets**: Quickly add admin, API docs, cloud, backup, WordPress, Spring Boot, and Laravel path sets.
-- **Subdomain Import Manager**: Paste subdomains from tools like Subfinder/Amass/Chaos and fetch live status, title, length, and tech signals.
-- **Session Save/Load**: Save scan results in browser localStorage and reload them later without rescanning.
-- **Burp/ZAP/Nuclei/ffuf Exports**: Export URL lists, parameter CSVs, Nuclei templates, and ffuf command helpers.
-- **Session Import/Export**: Save named sessions locally or move full session JSON between browsers.
-- **Manual Severity Override**: Change finding severity before exporting reports.
-- **API Call Parser**: Extracts real API calls from `fetch`, `axios`, `XMLHttpRequest`, and jQuery AJAX usage.
-- **Cloud/Bucket & Auth Mapping**: Flags real Firebase/Supabase/bucket signals and groups auth-related URLs.
-- **Parameter Discovery**: Dedicated extraction and grouping of URL parameters to identify potential injection points.
-- **Recursive Discovery Engine**: Full website crawling capability (Depth 1) with deep script analysis to find hidden routes.
-- **Precision Secret Detection**: High-fidelity regex for **20+ patterns** including AWS, Google Cloud, Stripe, Slack/Discord Webhooks, and JWT.
-- **High-Fidelity Mapping**: Captures raw file paths and absolute URLs without truncation, preserving double slashes and complex structures.
+### Bug fixes in V2.5
+- **CORS fix** — Worker strips upstream `Access-Control-*` headers so its own CORS policy always wins.
+- **Proxy deploy fix** — `run_worker_first: true` + `env.ASSETS` binding so the Worker runs on every request, static files served via assets binding.
+- **SSRF fix** — IP/DNS block check was dead code in the wrong function; now actually runs.
+- **PDF export** — Print any scan to PDF directly from the browser.
 
 ---
 
-## 📌 What is Web X Sider?
+## Features
 
-**Web X Sider** is a powerful security reconnaissance tool designed for:
+### Core Scanner
+- Deep JS crawling with configurable depth and concurrency
+- Endpoint extraction (REST paths, GraphQL, WebSocket)
+- Secret detection (AWS keys, JWTs, Bearer tokens, API keys, passwords)
+- File discovery (.env, .git, config files, source maps)
+- Parameter extraction from URLs, forms, JS
+- Severity scoring (Critical / High / Medium / Low)
+- Scope rules with wildcard support
+- Wayback Machine URL import
+- HAR / Burp proxy history import
 
-- 🔍 **Endpoint Discovery**: Find hidden routes and API calls.
-- 🔑 **Secret Detection**: Automatically identify API keys, tokens, and sensitive data.
-- 🕷️ **Recursive Crawling**: Deeper discovery by following same-domain links.
-- 🧩 **Reverse Engineering**: Analyze client-side behavior and dynamic URLs.
-
-It extracts data from external JS files, inline scripts, and HTML source code - instantly and completely in your browser.
-
----
-
-## ✨ Advanced Features
-
-| Feature                 | Description                                                                                          |
-| ----------------------- | ---------------------------------------------------------------------------------------------------- |
-| 🔑 **Secret Detection** | High-fidelity detection for 20+ keys including AWS, Google, Stripe, Slack/Discord Webhooks, and JWT. |
-| 🕷️ **Recursive Scan**   | Depth-limited (v2.0: Depth 1) crawling of internal links.                                            |
-| 📊 **Real-time Stats**  | Live dashboard tracking Scanned URLs, Endpoints, Secrets, and Files.                                 |
-| 🛡️ **Path Prober**      | Manual check for 500+ paths with response lengths, live filtering, and stop controls.                |
-| 🧭 **Robots/Sitemap Parser** | Extracts real paths and URLs from target robots.txt and sitemap files.                           |
-| 📘 **OpenAPI/Swagger Parser** | Parses live API specs and adds discovered endpoints to recon.                                    |
-| 🧬 **JWT & Storage Signals** | Decodes detected JWTs and flags real token/storage usage patterns in client code.                  |
-| 🔺 **GraphQL Checks** | Checks common GraphQL surfaces for real response signatures.                                            |
-| 🧱 **Scope Manager** | Restricts crawling to authorized domains/subdomains.                                                     |
-| 🕰️ **Wayback/Gau Import** | Imports external URL lists and scans only in-scope URLs.                                           |
-| 📥 **HAR & Proxy Import** | Imports HAR JSON, Burp/ZAP history, ffuf output, and raw URLs into scan inputs.                    |
-| 🚦 **Priority Dashboard** | Groups findings by real risk signals: Critical, High, Medium, Low.                                  |
-| 🧾 **Bug Bounty Report** | Exports a triage report with evidence, impact hints, and validation notes.                          |
-| 📝 **Finding Notes** | Add analyst notes, hide false positives, or copy individual findings as report text.                    |
-| ⚡ **Prober Presets** | One-click custom path additions for common stacks and sensitive surfaces.                              |
-| 🌐 **Subdomain Import** | Live-check imported hosts and group duplicate responses by status, title, length, and hash.          |
-| 💾 **Session Storage** | Save and load scan sessions locally in your browser.                                                   |
-| 🧰 **Tool Exports** | Export URL lists, parameter CSVs, Nuclei templates, ffuf commands, and high-risk finding blocks.        |
-| 🗂️ **Named Sessions** | Save named sessions locally and import/export full session JSON.                                        |
-| ☁️ **Cloud/Bucket Signals** | Detects Firebase, Supabase, S3, CloudFront, GCS, and Azure Blob URLs in fetched source.            |
-| 🔐 **Auth Surface Mapper** | Groups real discovered login, OAuth, token, password reset, MFA, and logout URLs.                  |
-| 🎯 **Result Filtering** | Instantly sort findings into Endpoints, Secrets, and Files with a global filter.                     |
-| 📄 **Advanced Export**  | Export to `.txt`, `.json`, `.csv`, and professional `.md` reports.                                   |
-| ✅ **100% Client-Side** | No backend, no data leakage - privacy-focused by design.                                             |
-
----
-
-## 🚫 Noise Protection (Smart Filtering)
-
-Web X Sider automatically excludes architectural noise to focus on valuable recon:
-
-- **Static Assets**: Blocks `*.png`, `*.css`, `*.woff`, `*.svg`, etc.
-- **Social & Analytics**: Filters LinkedIn, Facebook, Google Analytics, GTM, etc.
-- **Known CDNs**: Ignores common libraries from jsDelivr, cdnjs, unpkg, etc.
-- **Invalid Prefixes**: Excludes `data:`, `blob:`, `mailto:`, `tel:`, etc.
-
----
-
-## 🧪 Usage Guide
-
-### Local Run
-
-For local testing, use your private local proxy server so the crawler and prober can fetch target URLs through a local `/proxy` endpoint:
-
-```bash
-python server.py 5501
-```
-
-Then open:
-
-```text
-http://127.0.0.1:5501/
-```
-
-Opening `index.html` directly, or serving with plain `python -m http.server`, can load the website but break the tools because browsers block cross-origin requests. The local proxy helper is intentionally not published in this public GitHub Pages repo.
-
-### Cloudflare Worker Proxy
-
-The Cloudflare Worker proxy lives in [`workers/cloudflare-worker-proxy.js`](workers/cloudflare-worker-proxy.js). Wrangler is configured to use that file as the worker entry point.
-
-Optional FlareSolverr fallback is supported for authorized scans that hit Cloudflare/DDoS-Guard style challenge pages. For local use, run FlareSolverr on `http://127.0.0.1:8191/v1`, start `server.py`, then enable **Settings -> FlareSolverr fallback** in the UI. For the Worker proxy, configure a `FLARESOLVERR_URL` environment variable that points to your private FlareSolverr endpoint.
-
-### 🕷️ Smart Crawler
-
-1. Visit **[https://jojin1709.github.io/Web-X-Sider/](https://jojin1709.github.io/Web-X-Sider/)**
-2. Enter a target URL (e.g., `https://example.com`).
-3. Optionally add scope domains and imported URLs from `gau`, `waybackurls`, `katana`, or `hakrawler`.
-4. Click **Scan Page** for a quick analysis or **Full Scan** for recursive domain discovery.
-5. Monitor the **Dashboard** to see live extractions of Endpoints, Parameters, Secrets, and Files.
-6. Review the **Priority Dashboard** for Critical/High/Medium/Low grouping.
-7. Use category and severity filters to focus on high-value findings.
-8. Add notes, hide false positives, or copy a finding as report text.
-9. **Export** your findings in `.txt`, `.json`, `.csv`, `.md`, or bug bounty report format.
-
-### 🛡️ Sensitive Path Prober
-
-1. Switch to the **Sensitive Path Prober** tab from the header menu.
-2. Enter the target domain (e.g., `https://example.com`).
-3. Click **Check Paths** to start probing **500+ critical paths** (e.g., `.env`, `.git`, `phpinfo.php`).
-4. Optionally paste custom paths or use preset buttons for common stacks.
-5. Watch the **Progress Bar** and live **Status Counters** (200, 403, 404).
-6. Use the **Status Filters** (Found, Forbidden, Missing) to analyze the detected paths live.
-7. **Advanced Filtering**: Use the **Include/Exclude Lengths** inputs to filter out standard WAF block pages by their byte size (e.g., exclude `127, 403`).
-8. 🔗 Use the **OPEN🔗** buttons to instantly verify 200 and 403 leaks in a new tab.
+### Smart Prober
+- 700+ sensitive paths across 44 categories
+- Live title/status checks
+- Tech stack fingerprinting
+- Subdomain takeover detection
 
 ### Bug Bounty Recon Suite
+- CORS misconfiguration detection
+- CSP / security headers audit
+- Cookie flags checker (Secure, HttpOnly, SameSite)
+- Open redirect detection
+- Clickjacking / HSTS analysis
+- DNS record lookup (A, AAAA, CNAME, MX, TXT, NS)
 
-The Recon Suite runs only live checks against the target and parsed target content:
-
-- Security headers and weak header signals
-- CORS origin reflection checks
-- Technology fingerprinting
-- robots.txt and sitemap URL discovery
-- OpenAPI/Swagger endpoint parsing
-- Risky parameter grouping
-- Response signal detection
-- JWT decoding
-- Client storage/token usage detection
-- GraphQL endpoint response checks
-- Source map discovery with endpoint/secret extraction
-- Endpoint liveness checks
-- Cloud bucket/config signals
-- Auth surface mapping
-- Response status/length grouping
-- CORS origin bypass cases
-- CSP deep checks
-- GraphQL POST introspection checks when the Cloudflare Worker proxy supports POST
+### Export Formats
+- Markdown · JSON · CSV · TXT · Burp XML · **PDF**
 
 ---
 
-## 🧰 Built With
+## Proxy Setup
 
-- **Structure**: HTML5 & CSS3 (Advanced Glassmorphism UI)
-- **Logic**: Vanilla JavaScript (ES6+ / Async-Await)
-- **Engine**: High-Precision Regex Engine
-- **Proxy**: Private local proxy for development, with hosted proxy fallback for the public GitHub Pages app
+Live proxy: `https://web-x-sider.mmkoji856.workers.dev/?url=TARGET`
+
+Deploy your own:
+```bash
+git clone https://github.com/jojin1709/Web-X-Sider.git
+cd Web-X-Sider
+npm install -g wrangler
+wrangler login
+wrangler deploy
+```
+
+Local dev:
+```bash
+python server.py 5501
+# then open index.html — tool auto-detects localhost:5501
+```
 
 ---
 
-## 📝 License
+## Architecture
 
-This project is licensed under the [Apache License 2.0](LICENSE).
+```
+Browser (index.html + script.js + toolkit.js)
+    ↓ ?url=TARGET
+Cloudflare Worker (workers/cloudflare-worker-proxy.js)
+    ├─ ?url= present → proxy request to target, strip upstream CORS headers
+    └─ no ?url= → serve static assets via env.ASSETS binding
+```
+
+No backend database, no server-side state — everything runs client-side with localStorage for persistence (JS monitor watchlists, webhook settings, snapshots, IDOR results).
 
 ---
+
+## Stack
+
+- **Frontend**: Vanilla JS (ES2022), CSS3 glassmorphism
+- **Proxy**: Cloudflare Workers (no KV/D1 needed)
+- **Local proxy**: Python 3 (optional)
+- **DNS**: DNS-over-HTTPS (Cloudflare + Google)
+
+---
+
+## Credits
+
+Built by [@jojin1709](https://github.com/jojin1709) — bug bounty hunter & full-stack developer.
+
+HackerOne · Bugcrowd · YesWeHack · Intigriti

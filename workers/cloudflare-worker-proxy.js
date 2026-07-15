@@ -142,6 +142,7 @@ export default {
 
     const requestUrl = new URL(request.url);
     if (!requestUrl.searchParams.has("url")) {
+      if (env.ASSETS) return env.ASSETS.fetch(request);
       return responseFromText("Web X Sider proxy is running. Add ?url=https://example.com");
     }
 
