@@ -3964,8 +3964,8 @@ function renderWaybackOutput(urls, sourceLabel = "Wayback") {
 }
 
 function buildWaybackApi(host, includeSubdomains = false) {
-  const query = includeSubdomains ? `*.${host}` : host;
-  return `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(query + "/*")}&output=json&fl=original&collapse=urlkey&limit=1000`;
+  const query = includeSubdomains ? `*.${host}/*` : `${host}/*`;
+  return `https://web.archive.org/cdx/search/cdx?url=${query}&output=json&fl=original&collapse=urlkey&limit=500`;
 }
 
 function fetchWaybackJsonp(apiUrl, timeoutMs = 15000) {
