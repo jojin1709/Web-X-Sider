@@ -1,99 +1,218 @@
-#  <img width="1254" height="1254" alt="favicon" src="https://github.com/user-attachments/assets/2e32121d-e68f-4561-82a1-8aef66bcbbf2" />
-Web X Sider V5.0 - Advanced JavaScript Crawler, Endpoint Discovery & Complete Bug Bounty Toolkit
+<div align="center">
+
+<img src="./Web-X-Sider-cover.png" alt="Web X Sider - Advanced JavaScript Crawler & Endpoint Discovery" width="100%">
+
+# Web X Sider
+
+**Advanced JavaScript Crawler, Endpoint Discovery & Bug Bounty Toolkit**
+
+[![Version](https://img.shields.io/badge/version-5.0-blue.svg)](https://github.com/jojin1709/Web-X-Sider)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/jojin1709/Web-X-Sider?style=social)](https://github.com/jojin1709/Web-X-Sider)
+[![Issues](https://img.shields.io/github/issues/jojin1709/Web-X-Sider)](https://github.com/jojin1709/Web-X-Sider/issues)
+
+The ultimate client-side reconnaissance tool for security researchers. Extract hidden API routes, sensitive parameters, and hardcoded secrets instantly from any website — directly in your browser.
+
+**[Live Demo](https://web-x-sider.mmkoji856.workers.dev)** · **[Report Bug](https://github.com/jojin1709/Web-X-Sider/issues)** · **[Request Feature](https://github.com/jojin1709/Web-X-Sider/issues)**
 
 ---
 
-## Live Demo
+</div>
 
-**[https://web-x-sider.mmkoji856.workers.dev](https://web-x-sider.mmkoji856.workers.dev)**
+## Table of Contents
+
+- [What is Web X Sider?](#what-is-web-x-sider)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [56 Tools Overview](#56-tools-overview)
+- [Architecture](#architecture)
+- [Proxy Setup](#proxy-setup)
+- [Keyboard Shortcuts](#keyboard-shortcuts)
+- [Supported Languages](#supported-languages)
+- [Contributing](#contributing)
+- [License](#license)
+- [Credits](#credits)
 
 ---
 
-## What's New in V5.0
+## What is Web X Sider?
 
-### 56 Total Tools!
+Web X Sider is a **100% client-side** reconnaissance tool designed for bug bounty hunters and security researchers. It runs entirely in your browser — no data is sent to external servers.
 
-#### Core Scanner Tools (9)
-- JS Diff Monitor, JWT Lab, Subdomain Takeover Scanner, CVE Correlator, Batch Scanner, IDOR/Range Tester, Auth Matrix Tester, Webhook Alerts, Visual Snapshot
+### Why Web X Sider Exists
 
-#### Advanced Toolkit Tools (8)
-- Race Condition Tester, GraphQL Explorer, OAuth/PKCE Tester, Request Smuggling Tester, Prototype Pollution Tester, Cache Poisoning Tester, Bucket Enumeration, Nuclei Template Builder
+In bug bounty hunting, reconnaissance is 80% of the work. Web X Sider automates the tedious parts:
 
-#### Security Testing Tools (25)
-- WAF Detection, Subdomain Enumeration, Open Redirect Scanner, Rate Limiting Detection, Port Scanning, Backup File Finder, HTTP Method Testing, Clickjacking Test, Sensitive Header Analysis, Cache Poisoning Deep Test, SQL Injection Detection, XSS Detection, Command Injection, Directory Traversal, WebSocket Testing, API Versioning Discovery, JWT Analysis Enhancements, OAuth Security Testing, DNS Security Analysis, Email Security (SPF/DKIM/DMARC), Cloud Storage Enumeration, Container/Docker Exposure, CI/CD Pipeline Exposure, Mobile App Analysis, Real-time Collaboration
+- **JavaScript Analysis** — Extract endpoints, secrets, and parameters from JS files
+- **Sensitive Path Discovery** — 700+ paths across 44 categories
+- **Security Testing** — SQL injection, XSS, command injection, and more
+- **WAF Detection** — Identify which protection is in place before testing
 
-#### Productivity Tools (14)
-- **Unified Dashboard** — Consolidated view of all scan results
-- **Enhanced Report Generation** — HTML, Executive Summary, PDF reports
-- **Scan History & Comparison** — Save and compare scans over time
-- **Target Management** — Save targets with notes, tags, priority levels
-- **Keyboard Shortcuts** — Ctrl+1-5 for navigation, Ctrl+F for filter, Ctrl+E for export
-- **Offline Support** — Service Worker caching for offline use
-- **Custom Wordlist Upload** — Upload and manage custom wordlists
-- **Scan Profiles** — Stealth/Normal/Aggressive presets
-- **Email/Webhook Alerts** — Discord/Slack notifications for findings
-- **Compliance Checks** — OWASP Top 10 assessment
-- **API Integration** — REST API for external tool integration
-- **Multi-language Support** — English, Spanish, French, German, Portuguese, Arabic
-- **Dark/Light Theme Toggle** — Switch between themes
-- **Accessibility** — High contrast, large text, reduced motion options
+All **56 tools** run instantly in your browser with zero external dependencies.
 
 ---
 
 ## Features
 
-### Core Scanner
-- Deep JS crawling with configurable depth and concurrency
-- Endpoint extraction (REST paths, GraphQL, WebSocket)
-- Secret detection (AWS keys, JWTs, Bearer tokens, API keys, passwords)
-- File discovery (.env, .git, config files, source maps)
-- Parameter extraction from URLs, forms, JS
-- Severity scoring (Critical / High / Medium / Low)
-- Scope rules with wildcard support
-- Wayback Machine URL import
-- HAR / Burp proxy history import
+| Category | Tools | Description |
+|----------|-------|-------------|
+| **Core Scanner** | 9 | JS crawling, endpoint discovery, secret detection, file discovery |
+| **Smart Prober** | 1 | 700+ sensitive paths across 44 categories |
+| **Recon Suite** | 1 | CORS, CSP, headers, tech fingerprint, JWT analysis |
+| **Advanced Toolkit** | 8 | Race testing, GraphQL, OAuth/PKCE, smuggling, prototype pollution |
+| **Security Testing** | 25 | WAF detection, SQLi, XSS, CMDi, traversal, port scanning |
+| **Productivity** | 14 | Dashboard, reports, history, targets, i18n, themes |
 
-### Smart Prober
-- 700+ sensitive paths across 44 categories
-- Live title/status checks
-- Tech stack fingerprinting
-- Subdomain takeover detection
+### Key Capabilities
 
-### Bug Bounty Recon Suite
-- CORS misconfiguration detection
-- CSP / security headers audit
-- Cookie flags checker (Secure, HttpOnly, SameSite)
-- Open redirect detection
-- Clickjacking / HSTS analysis
-- DNS record lookup (A, AAAA, CNAME, MX, TXT, NS)
-
-### Export Formats
-- Markdown · JSON · CSV · TXT · Burp XML · Nuclei YAML · ffuf commands · **HTML Report** · **Executive Summary**
+- **100% Client-Side** — No data leaves your browser
+- **56 Integrated Tools** — Complete bug bounty toolkit
+- **12 Languages** — Full UI translation support
+- **Dark/Light Themes** — Customize your workspace
+- **Offline Support** — Works without internet (Service Worker)
+- **Export Multiple Formats** — JSON, CSV, HTML, PDF, Nuclei YAML
 
 ---
 
-## Keyboard Shortcuts
+## Quick Start
 
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+1` | Crawler |
-| `Ctrl+2` | Prober |
-| `Ctrl+3` | Recon Suite |
-| `Ctrl+4` | Settings |
-| `Ctrl+5` | Toolkit |
-| `Ctrl+F` | Focus filter |
-| `Ctrl+E` | Export results |
-| `Ctrl+Enter` | Start scan |
-| `Ctrl+S` | Save session |
-| `Escape` | Stop scan |
+### Option 1: Live Demo (Recommended)
+
+Just visit **[web-x-sider.mmkoji856.workers.dev](https://web-x-sider.mmkoji856.workers.dev)** and start scanning!
+
+### Option 2: Local Development
+
+```bash
+# Clone the repository
+git clone https://github.com/jojin1709/Web-X-Sider.git
+cd Web-X-Sider
+
+# Start local server
+python server.py 5501
+
+# Open in browser
+# http://localhost:5501
+```
+
+### Option 3: Deploy Your Own Proxy
+
+```bash
+# Install Wrangler
+npm install -g wrangler
+
+# Login to Cloudflare
+wrangler login
+
+# Deploy
+wrangler deploy
+```
+
+---
+
+## 56 Tools Overview
+
+### Core Scanner (9 Tools)
+
+| Tool | Description |
+|------|-------------|
+| JS Diff Monitor | Watch JS/page URLs for changes |
+| JWT Lab | Decode, brute-force, forge tokens |
+| Subdomain Takeover | 65-service fingerprint detection |
+| CVE Correlator | Map tech against 28 high-signal CVEs |
+| Batch Scanner | 50+ subdomains at once |
+| IDOR Range Tester | `{id}` style fuzzing |
+| Auth Matrix | Multi-role authorization testing |
+| Webhook Alerts | Discord/Slack notifications |
+| Visual Snapshot | WordPress mshots screenshots |
+
+### Security Testing (25 Tools)
+
+| Tool | Description |
+|------|-------------|
+| WAF Detection | Identify Cloudflare, Akamai, AWS WAF, etc. |
+| Subdomain Enumeration | DNS brute-force, Certificate Transparency |
+| Open Redirect Scanner | Parameter fuzzing with bypass payloads |
+| Rate Limiting Detection | Detect throttle behavior |
+| Port Scanning | Common ports via fetch |
+| Backup File Finder | .bak, .old, .swp patterns |
+| HTTP Method Testing | OPTIONS, TRACE, PUT, DELETE |
+| Clickjacking Test | iframe embedding, X-Frame-Options |
+| Sensitive Header Analysis | Server version, X-Powered-By leaks |
+| Cache Poisoning Test | Header injection testing |
+| SQL Injection Detection | Error-based, time-based |
+| XSS Detection | Reflected parameter testing |
+| Command Injection | OS command injection |
+| Directory Traversal | Path traversal with encoding bypass |
+| WebSocket Testing | Endpoint discovery, message injection |
+| API Version Discovery | REST/GraphQL version detection |
+| JWT Enhancements | JWKS discovery, algorithm confusion |
+| OAuth Testing | Redirect URI bypass, state parameter |
+| DNS Security | Zone transfer, SPF/DMARC |
+| Email Security | SPF/DKIM/DMARC analysis |
+| Cloud Storage | S3, GCS, Azure, DigitalOcean |
+| Container Exposure | Docker socket, Kubernetes API |
+| CI/CD Exposure | Jenkins, GitLab CI, GitHub Actions |
+| Mobile App Analysis | Deep links, manifests |
+| Real-time Collaboration | Export/import sessions |
+
+### Productivity Tools (14 Tools)
+
+| Tool | Description |
+|------|-------------|
+| Unified Dashboard | Consolidated view of all findings |
+| Enhanced Reports | HTML, Executive Summary, PDF |
+| Scan History | Save and compare scans over time |
+| Target Management | Save targets with notes, priority |
+| Keyboard Shortcuts | Ctrl+1-5, Ctrl+F, Ctrl+E |
+| Offline Support | Service Worker caching |
+| Custom Wordlists | Upload and manage wordlists |
+| Scan Profiles | Stealth/Normal/Aggressive presets |
+| Email/Webhook Alerts | Discord/Slack notifications |
+| Compliance Checks | OWASP Top 10 assessment |
+| API Integration | REST API for external tools |
+| Multi-language (i18n) | 12 languages supported |
+| Theme Toggle | Dark/Light/Auto themes |
+| Accessibility | High contrast, large text |
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Browser (Client)                       │
+├─────────────────────────────────────────────────────────────┤
+│  index.html  │  script.js  │  toolkit*.js  │  i18n.js  │ sw.js │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+                    ┌──────▼──────┐
+                    │  ?url=TARGET │
+                    └──────┬──────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
+│              Cloudflare Worker (Proxy)                      │
+├─────────────────────────────────────────────────────────────┤
+│  • SSRF Protection (blocks private IPs)                     │
+│  • User-Agent Rotation (5 real browser UAs)                 │
+│  • CORS Headers (own policy wins)                           │
+│  • FlareSolverr Integration (bot bypass)                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**No backend database. No server-side state. Everything runs client-side with localStorage.**
 
 ---
 
 ## Proxy Setup
 
-Live proxy: `https://web-x-sider.mmkoji856.workers.dev/?url=TARGET`
+| Option | URL | Notes |
+|--------|-----|-------|
+| **Live Proxy** | `https://web-x-sider.mmkoji856.workers.dev/?url=TARGET` | Public, free |
+| **Local Proxy** | `http://localhost:5501/proxy?url=TARGET` | Run server.py |
+| **Custom Worker** | Deploy your own | See below |
 
-Deploy your own:
+### Deploy Your Own Worker
+
 ```bash
 git clone https://github.com/jojin1709/Web-X-Sider.git
 cd Web-X-Sider
@@ -102,40 +221,72 @@ wrangler login
 wrangler deploy
 ```
 
-Local dev:
-```bash
-python server.py 5501
-# then open index.html — tool auto-detects localhost:5501
-```
+---
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+1` | Switch to Scanner |
+| `Ctrl+2` | Switch to Prober |
+| `Ctrl+3` | Switch to Recon Suite |
+| `Ctrl+4` | Switch to Settings |
+| `Ctrl+5` | Switch to Toolkit |
+| `Ctrl+F` | Focus filter input |
+| `Ctrl+E` | Jump to export section |
+| `Ctrl+Enter` | Start scan |
+| `Ctrl+S` | Save session |
+| `Escape` | Stop scan |
 
 ---
 
-## Architecture
+## Supported Languages
 
-```
-Browser (index.html + script.js + toolkit*.js + sw.js)
-    ↓ ?url=TARGET
-Cloudflare Worker (workers/cloudflare-worker-proxy.js)
-    ├─ ?url= present → proxy request to target, strip upstream CORS headers
-    └─ no ?url= → serve static assets via env.ASSETS binding
-```
+| Tier | Languages |
+|------|-----------|
+| **Tier 1 (Global)** | English, 中文, Español, العربية |
+| **Tier 2 (Economic)** | Deutsch, 日本語, Français, Português |
+| **Tier 3 (Audience)** | हिन्दी, বাংলা, Русский, Bahasa Indonesia |
 
-No backend database, no server-side state — everything runs client-side with localStorage for persistence.
+Full UI translation — all buttons, labels, and messages change when you select a language.
 
 ---
 
-## Stack
+## Contributing
 
-- **Frontend**: Vanilla JS (ES2022), CSS3 glassmorphism
-- **Proxy**: Cloudflare Workers (no KV/D1 needed)
-- **Local proxy**: Python 3 (optional)
-- **DNS**: DNS-over-HTTPS (Cloudflare + Google)
-- **Offline**: Service Worker for caching
+Contributions are welcome! Here's how:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
 ---
 
 ## Credits
 
-Built by [@jojin1709](https://github.com/jojin1709) — bug bounty hunter & full-stack developer.
+Built by **[@jojin1709](https://github.com/jojin1709)** — Bug Bounty Hunter & Full-Stack Developer
 
-HackerOne · Bugcrowd · YesWeHack · Intigriti
+<a href="https://www.linkedin.com/in/jojin-john-74386b34a/" target="_blank">
+  <img src="https://img.shields.io/badge/LinkedIn-Connect-blue?style=flat&logo=linkedin" alt="LinkedIn">
+</a>
+<a href="https://github.com/jojin1709" target="_blank">
+  <img src="https://img.shields.io/badge/GitHub-Follow-black?style=flat&logo=github" alt="GitHub">
+</a>
+
+---
+
+<div align="center">
+
+**Built for the Bug Bounty Community**
+
+[HackerOne](https://hackerone.com) · [Bugcrowd](https://bugcrowd.com) · [YesWeHack](https://yeswehack.com) · [Intigriti](https://intigriti.com)
+
+</div>
