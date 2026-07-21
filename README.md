@@ -1,5 +1,5 @@
 #  <img width="1254" height="1254" alt="favicon" src="https://github.com/user-attachments/assets/2e32121d-e68f-4561-82a1-8aef66bcbbf2" />
-Web X Sider V4.0 - Advanced JavaScript Crawler, Endpoint Discovery & Complete Bug Bounty Toolkit
+Web X Sider V5.0 - Advanced JavaScript Crawler, Endpoint Discovery & Complete Bug Bounty Toolkit
 
 ---
 
@@ -9,77 +9,34 @@ Web X Sider V4.0 - Advanced JavaScript Crawler, Endpoint Discovery & Complete Bu
 
 ---
 
-## What's New in V4.0
+## What's New in V5.0
 
-### Complete Bug Bounty Toolkit (42 Tools!)
+### 56 Total Tools!
 
-#### Core Scanner Tools (9 tools)
-- **JS Diff Monitor** — Watch JS/page URLs for changes over time
-- **JWT Lab** — Decode, brute-force, forge alg:none tokens
-- **Subdomain Takeover Scanner** — 65-service fingerprint DB
-- **CVE Correlator** — Maps tech against 28 high-signal CVEs
-- **Batch Scanner** — 50+ subdomains at once
-- **IDOR / Range Tester** — `{id}` style fuzzing
-- **Auth Matrix Tester** — Multi-role authorization testing
-- **Webhook Alerts** — Discord/Slack notifications
-- **Visual Snapshot** — WordPress mshots screenshots
+#### Core Scanner Tools (9)
+- JS Diff Monitor, JWT Lab, Subdomain Takeover Scanner, CVE Correlator, Batch Scanner, IDOR/Range Tester, Auth Matrix Tester, Webhook Alerts, Visual Snapshot
 
-#### Advanced Toolkit Tools (8 tools)
-- **Race Condition Tester** — Fire N concurrent requests
-- **GraphQL Explorer** — Execute queries, introspection
-- **OAuth/PKCE Tester** — Generate authorization URLs
-- **Request Smuggling Tester** — CL.TE, TE.CL, TE.TE
-- **Prototype Pollution Tester** — `__proto__` payloads
-- **Cache Poisoning Tester** — Header injection testing
-- **Bucket Enumeration** — S3, GCS, Azure, DigitalOcean
-- **Nuclei Template Builder** — Generate YAML templates
+#### Advanced Toolkit Tools (8)
+- Race Condition Tester, GraphQL Explorer, OAuth/PKCE Tester, Request Smuggling Tester, Prototype Pollution Tester, Cache Poisoning Tester, Bucket Enumeration, Nuclei Template Builder
 
-#### Security Testing Tools (25 tools)
-1. **WAF Detection & Fingerprinting** — Detect Cloudflare, Akamai, AWS WAF, Imperva, Sucuri, ModSecurity, etc.
-2. **Subdomain Enumeration** — DNS brute-force, Certificate Transparency, DNS records
-3. **Open Redirect Scanner** — Parameter fuzzing with bypass payloads
-4. **Rate Limiting Detection** — Detect throttle behavior and thresholds
-5. **Port Scanning** — Common ports via fetch timeouts
-6. **Backup File Finder** — .bak, .old, .swp, .sql.gz patterns
-7. **HTTP Method Testing** — OPTIONS, TRACE, PUT, DELETE discovery
-8. **Clickjacking Test** — iframe embedding, X-Frame-Options, CSP
-9. **Sensitive Header Analysis** — Server version, X-Powered-By, internal IPs
-10. **Cache Poisoning Deep Test** — Header injection for cache keys
-11. **SQL Injection Detection** — Error-based, time-based, boolean-blind
-12. **XSS Detection** — Reflected parameter testing
-13. **Command Injection** — OS command injection indicators
-14. **Directory Traversal** — Path traversal with encoding bypass
-15. **WebSocket Testing** — Endpoint discovery, message injection
-16. **API Versioning Discovery** — REST/GraphQL version detection
-17. **JWT Analysis Enhancements** — JWKS discovery, algorithm confusion
-18. **OAuth Security Testing** — Redirect URI bypass, state parameter
-19. **DNS Security Analysis** — Zone transfer, SPF/DMARC
-20. **Email Security (SPF/DKIM/DMARC)** — Email spoofing protection
-21. **Cloud Storage Enumeration** — S3, GCS, Azure, DigitalOcean
-22. **Container/Docker Exposure** — Docker socket, Kubernetes API
-23. **CI/CD Pipeline Exposure** — Jenkins, GitLab CI, GitHub Actions
-24. **Mobile App Analysis** — Deep links, manifests, service workers
-25. **Real-time Collaboration** — Export/import sessions, notes
+#### Security Testing Tools (25)
+- WAF Detection, Subdomain Enumeration, Open Redirect Scanner, Rate Limiting Detection, Port Scanning, Backup File Finder, HTTP Method Testing, Clickjacking Test, Sensitive Header Analysis, Cache Poisoning Deep Test, SQL Injection Detection, XSS Detection, Command Injection, Directory Traversal, WebSocket Testing, API Versioning Discovery, JWT Analysis Enhancements, OAuth Security Testing, DNS Security Analysis, Email Security (SPF/DKIM/DMARC), Cloud Storage Enumeration, Container/Docker Exposure, CI/CD Pipeline Exposure, Mobile App Analysis, Real-time Collaboration
 
-### Bug Fixes in V4.0
-- **SSRF protection** — Worker blocks private IP ranges
-- **WAF bypass** — User-Agent rotation + browser-like headers
-- **CORS fix** — Worker strips upstream CORS headers
-- **FlareSolverr fix** — Proper cookie forwarding
-- **Mobile nav sync** — Toolkit tabs sync correctly
-- **PDF export** — Print any scan to PDF
-
-### UI/UX Improvements in V4.0
-- Enhanced glassmorphism effects
-- Button ripple and hover animations
-- Stat card lift-on-hover effects
-- Prober result left-border color coding
-- Export button 3D effects
-- Tab underline animations
-- Toast notification slide-in
-- Custom scrollbars
-- Print styles
-- Reduced motion support
+#### Productivity Tools (14)
+- **Unified Dashboard** — Consolidated view of all scan results
+- **Enhanced Report Generation** — HTML, Executive Summary, PDF reports
+- **Scan History & Comparison** — Save and compare scans over time
+- **Target Management** — Save targets with notes, tags, priority levels
+- **Keyboard Shortcuts** — Ctrl+1-5 for navigation, Ctrl+F for filter, Ctrl+E for export
+- **Offline Support** — Service Worker caching for offline use
+- **Custom Wordlist Upload** — Upload and manage custom wordlists
+- **Scan Profiles** — Stealth/Normal/Aggressive presets
+- **Email/Webhook Alerts** — Discord/Slack notifications for findings
+- **Compliance Checks** — OWASP Top 10 assessment
+- **API Integration** — REST API for external tool integration
+- **Multi-language Support** — English, Spanish, French, German, Portuguese, Arabic
+- **Dark/Light Theme Toggle** — Switch between themes
+- **Accessibility** — High contrast, large text, reduced motion options
 
 ---
 
@@ -111,7 +68,24 @@ Web X Sider V4.0 - Advanced JavaScript Crawler, Endpoint Discovery & Complete Bu
 - DNS record lookup (A, AAAA, CNAME, MX, TXT, NS)
 
 ### Export Formats
-- Markdown · JSON · CSV · TXT · Burp XML · Nuclei YAML · ffuf commands · **PDF**
+- Markdown · JSON · CSV · TXT · Burp XML · Nuclei YAML · ffuf commands · **HTML Report** · **Executive Summary**
+
+---
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+1` | Crawler |
+| `Ctrl+2` | Prober |
+| `Ctrl+3` | Recon Suite |
+| `Ctrl+4` | Settings |
+| `Ctrl+5` | Toolkit |
+| `Ctrl+F` | Focus filter |
+| `Ctrl+E` | Export results |
+| `Ctrl+Enter` | Start scan |
+| `Ctrl+S` | Save session |
+| `Escape` | Stop scan |
 
 ---
 
@@ -139,7 +113,7 @@ python server.py 5501
 ## Architecture
 
 ```
-Browser (index.html + script.js + toolkit.js + toolkit2.js + toolkit3.js)
+Browser (index.html + script.js + toolkit*.js + sw.js)
     ↓ ?url=TARGET
 Cloudflare Worker (workers/cloudflare-worker-proxy.js)
     ├─ ?url= present → proxy request to target, strip upstream CORS headers
@@ -156,6 +130,7 @@ No backend database, no server-side state — everything runs client-side with l
 - **Proxy**: Cloudflare Workers (no KV/D1 needed)
 - **Local proxy**: Python 3 (optional)
 - **DNS**: DNS-over-HTTPS (Cloudflare + Google)
+- **Offline**: Service Worker for caching
 
 ---
 
