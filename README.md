@@ -76,36 +76,7 @@ All **56 tools** run instantly in your browser with zero external dependencies.
 
 ## Quick Start
 
-### Option 1: Live Demo (Recommended)
-
-Just visit **[web-x-sider.mmkoji856.workers.dev](https://web-x-sider.mmkoji856.workers.dev)** and start scanning!
-
-### Option 2: Local Development
-
-```bash
-# Clone the repository
-git clone https://github.com/jojin1709/Web-X-Sider.git
-cd Web-X-Sider
-
-# Start local server
-python server.py 5501
-
-# Open in browser
-# http://localhost:5501
-```
-
-### Option 3: Deploy Your Own Proxy
-
-```bash
-# Install Wrangler
-npm install -g wrangler
-
-# Login to Cloudflare
-wrangler login
-
-# Deploy
-wrangler deploy
-```
+Just visit **[web-x-sider.mmkoji856.workers.dev](https://web-x-sider.mmkoji856.workers.dev)** and start scanning — 100% free, no signup required!
 
 ---
 
@@ -203,23 +174,9 @@ wrangler deploy
 
 ---
 
-## Proxy Setup
+## Proxy
 
-| Option | URL | Notes |
-|--------|-----|-------|
-| **Live Proxy** | `https://web-x-sider.mmkoji856.workers.dev/?url=TARGET` | Public, free |
-| **Local Proxy** | `http://localhost:5501/proxy?url=TARGET` | Run server.py |
-| **Custom Worker** | Deploy your own | See below |
-
-### Deploy Your Own Worker
-
-```bash
-git clone https://github.com/jojin1709/Web-X-Sider.git
-cd Web-X-Sider
-npm install -g wrangler
-wrangler login
-wrangler deploy
-```
+The live proxy is built-in — just enter any URL and start scanning. No configuration needed.
 
 ---
 
