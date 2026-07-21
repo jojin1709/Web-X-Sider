@@ -3964,14 +3964,8 @@ function renderWaybackOutput(urls, sourceLabel = "Wayback") {
 }
 
 function buildWaybackApi(host, includeSubdomains = false) {
-  const cdxParams = new URLSearchParams({
-    url: includeSubdomains ? `*.${host}/*` : `${host}/*`,
-    output: "json",
-    fl: "original",
-    collapse: "urlkey",
-    limit: includeSubdomains ? "2000" : "1000"
-  });
-  return `https://web.archive.org/cdx/search/cdx?${cdxParams.toString()}`;
+  const query = includeSubdomains ? `*.${host}` : host;
+  return `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(query + "/*")}&output=json&fl=original&collapse=urlkey&limit=1000`;
 }
 
 function fetchWaybackJsonp(apiUrl, timeoutMs = 15000) {
@@ -4052,6 +4046,7 @@ async function fetchWaybackRows(apiUrls) {
 
 waybackFetchBtn?.addEventListener("click", async () => {
   let siteUrl = urlInput.value.trim();
+  const waybackBtn = document.getElementById("waybackFetchBtn");
   if (!siteUrl) return showToast("Enter a valid URL", "warn");
   if (!/^https?:\/\//i.test(siteUrl)) siteUrl = `https://${siteUrl}`;
   try {
