@@ -22,25 +22,25 @@
   --danger: #EF4444;
   --danger-light: #F87171;
 
-  /* Glass Effect Colors */
-  --glass-bg: rgba(255, 255, 255, 0.08);
-  --glass-bg-light: rgba(255, 255, 255, 0.12);
-  --glass-bg-strong: rgba(255, 255, 255, 0.15);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-border-light: rgba(255, 255, 255, 0.18);
-  --glass-border-strong: rgba(255, 255, 255, 0.25);
+  /* Glass Effect Colors - Clean Dark Theme */
+  --glass-bg: rgba(30, 41, 59, 0.8);
+  --glass-bg-light: rgba(30, 41, 59, 0.9);
+  --glass-bg-strong: rgba(30, 41, 59, 1);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-light: rgba(255, 255, 255, 0.12);
+  --glass-border-strong: rgba(255, 255, 255, 0.15);
 
   /* Shadows */
-  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.15);
-  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.25);
-  --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.1);
 
   /* Text Colors */
-  --text-primary: #F8FAFC;
-  --text-secondary: rgba(248, 250, 252, 0.8);
-  --text-muted: rgba(248, 250, 252, 0.6);
-  --text-dim: rgba(248, 250, 252, 0.4);
+  --text-primary: #F1F5F9;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  --text-dim: #64748B;
 
   /* Background */
   --bg-base: #0F172A;
@@ -3761,18 +3761,204 @@ details summary:hover {
 
 /* High Contrast Mode */
 [data-theme="light"] {
-  --bg-base: #ffffff;
-  --bg-surface: #f1f5f9;
-  --glass-bg: rgba(0, 0, 0, 0.05);
+  --bg-base: #f8fafc;
+  --bg-surface: #ffffff;
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --glass-bg-light: rgba(255, 255, 255, 0.98);
+  --glass-bg-strong: rgba(255, 255, 255, 1);
   --glass-border: rgba(0, 0, 0, 0.1);
+  --glass-border-light: rgba(0, 0, 0, 0.15);
+  --glass-border-strong: rgba(0, 0, 0, 0.2);
   --text-primary: #1e293b;
-  --text-secondary: rgba(30, 41, 59, 0.8);
-  --text-muted: rgba(30, 41, 59, 0.6);
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.08);
+}
+
+[data-theme="light"] body {
+  background: #f8fafc;
+}
+
+[data-theme="light"] .bg-wrapper {
+  display: none;
 }
 
 [data-theme="light"] .floating-nav {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .glass-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .glass-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .stat-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .input-wrapper input,
+[data-theme="light"] .glass-input input {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+}
+
+[data-theme="light"] .input-wrapper input:focus,
+[data-theme="light"] .glass-input input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .btn-primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+[data-theme="light"] .btn-secondary {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+[data-theme="light"] .tab-btn,
+[data-theme="light"] .severity-filter,
+[data-theme="light"] .preset-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+[data-theme="light"] .tab-btn.active,
+[data-theme="light"] .severity-filter.active {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border-color: transparent;
+}
+
+[data-theme="light"] .card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .export-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+[data-theme="light"] .export-btn:hover {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+}
+
+[data-theme="light"] .mobile-nav {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .mobile-menu {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .mobile-nav-link {
+  color: #475569;
+}
+
+[data-theme="light"] .mobile-nav-link:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+[data-theme="light"] .mobile-nav-link.active {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+}
+
+[data-theme="light"] .hero-title .title-gradient {
+  background: linear-gradient(135deg, #1e293b 0%, #6366f1 50%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme="light"] .hero-subtitle {
+  color: #6366f1;
+}
+
+[data-theme="light"] .hero-description {
+  color: #475569;
+}
+
+[data-theme="light"] .glass-chip {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+[data-theme="light"] .glass-badge {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+[data-theme="light"] .progress-bar-bg {
+  background: #e2e8f0;
+}
+
+[data-theme="light"] .status {
+  color: #64748b;
+}
+
+[data-theme="light"] #filterInput {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+}
+
+[data-theme="light"] .prober-results-list {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .recon-metric,
+[data-theme="light"] .recon-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .footer-glass {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .tk-panel .advanced-scan-field {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] textarea {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+}
+
+[data-theme="light"] select {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
 }
 
 .high-contrast {
