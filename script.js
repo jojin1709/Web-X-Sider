@@ -870,14 +870,17 @@ document.querySelectorAll(".theme-btn").forEach(btn => {
   });
 });
 
-// Language buttons in Settings
+// Language buttons in Settings - Apply immediately
 document.querySelectorAll(".lang-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".lang-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     const lang = btn.dataset.lang;
     try { localStorage.setItem("web-x-sider:lang", lang); } catch {}
-    if (typeof applyI18n === "function") applyI18n(lang);
+    if (typeof applyI18n === "function") {
+      applyI18n(lang);
+      showToast("Language changed to: " + lang.toUpperCase(), "success");
+    }
   });
 });
 
@@ -4055,9 +4058,20 @@ waybackFetchBtn?.addEventListener("click", async () => {
     const host = new URL(siteUrl).hostname.replace(/^www\./, "");
     const apiUrls = [buildWaybackApi(host, false), buildWaybackApi(host, true)];
     renderWaybackOutput([]);
-    setWaybackStatus(`Fetching Wayback URLs for ${host}...`, "info");
+    setWaybackStatus(`Fetching Wayback URLs for ${host}... (0%)`, "info");
     showToast("Fetching Wayback URLs...", "info", 2000);
+
+    // Progress simulation
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+      progress = Math.min(progress + 5, 90);
+      setWaybackStatus(`Fetching Wayback URLs for ${host}... (${progress}%)`, "info");
+    }, 500);
+
     const rows = await fetchWaybackRows(apiUrls);
+
+    clearInterval(progressInterval);
+    setWaybackStatus(`Fetching Wayback URLs for ${host}... (100%)`, "success");
     const urls = [...new Set(rows
       .map(row => Array.isArray(row) ? row[0] : row)
       .filter(url => /^https?:\/\//i.test(String(url || "")))
