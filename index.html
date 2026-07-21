@@ -76,23 +76,23 @@
     <div class="nav-links">
       <button id="navCrawler" class="nav-link active">
         <i class="fas fa-search"></i>
-        <span>Crawler</span>
+        <span data-i18n="nav_scanner">Crawler</span>
       </button>
       <button id="navProber" class="nav-link">
         <i class="fas fa-crosshairs"></i>
-        <span>Prober</span>
+        <span data-i18n="nav_prober">Prober</span>
       </button>
       <button id="navRecon" class="nav-link">
         <i class="fas fa-shield-halved"></i>
-        <span>Recon Suite</span>
+        <span data-i18n="nav_recon">Recon Suite</span>
       </button>
       <button id="navSettings" class="nav-link">
         <i class="fas fa-gear"></i>
-        <span>Settings</span>
+        <span data-i18n="nav_settings">Settings</span>
       </button>
           <button id="navToolkit" class="nav-link">
         <i class="fas fa-toolbox"></i>
-        <span>Toolkit</span>
+        <span data-i18n="nav_toolkit">Toolkit</span>
       </button>
     </div>
     <div class="nav-divider"></div>
@@ -131,15 +131,15 @@
     </button>
     <button id="navReconMobile" class="mobile-nav-link">
       <i class="fas fa-shield-halved"></i>
-      <span>Recon Suite</span>
+      <span data-i18n="nav_recon">Recon Suite</span>
     </button>
     <button id="navSettingsMobile" class="mobile-nav-link">
       <i class="fas fa-gear"></i>
-      <span>Settings</span>
+      <span data-i18n="nav_settings">Settings</span>
     </button>
         <button id="navToolkitMobile" class="mobile-nav-link">
       <i class="fas fa-toolbox"></i>
-      <span>Toolkit</span>
+      <span data-i18n="nav_toolkit">Toolkit</span>
     </button>
     <div class="mobile-divider"></div>
     <a href="https://www.linkedin.com/in/jojin-john-74386b34a/" target="_blank" rel="noopener noreferrer" class="mobile-cta">
@@ -157,7 +157,7 @@
     <header class="hero-section">
       <div class="hero-badge glass-badge">
         <i class="fas fa-bolt"></i>
-        <span>Advanced Reconnaissance Tool</span>
+        <span data-i18n="hero_badge">Advanced Reconnaissance Tool</span>
       </div>
       <h1 class="hero-title">
         <span class="title-gradient">Web X Sider</span>
@@ -784,14 +784,20 @@
 
         <!-- Language Settings -->
         <div id="settings-language" class="settings-content" style="display:none;">
-          <h3><i class="fas fa-language"></i> Language</h3>
+          <h3><i class="fas fa-language"></i> Language / Langue / 语言</h3>
           <div class="lang-grid">
             <button class="lang-btn active" data-lang="en">English</button>
+            <button class="lang-btn" data-lang="zh">中文</button>
             <button class="lang-btn" data-lang="es">Español</button>
-            <button class="lang-btn" data-lang="fr">Français</button>
-            <button class="lang-btn" data-lang="de">Deutsch</button>
-            <button class="lang-btn" data-lang="pt">Português</button>
             <button class="lang-btn" data-lang="ar">العربية</button>
+            <button class="lang-btn" data-lang="de">Deutsch</button>
+            <button class="lang-btn" data-lang="ja">日本語</button>
+            <button class="lang-btn" data-lang="fr">Français</button>
+            <button class="lang-btn" data-lang="pt">Português</button>
+            <button class="lang-btn" data-lang="hi">हिन्दी</button>
+            <button class="lang-btn" data-lang="bn">বাংলা</button>
+            <button class="lang-btn" data-lang="ru">Русский</button>
+            <button class="lang-btn" data-lang="id">Bahasa Indonesia</button>
           </div>
         </div>
 
@@ -800,10 +806,10 @@
           <h3><i class="fas fa-keyboard"></i> Keyboard Shortcuts</h3>
           <div class="shortcuts-grid">
             <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>1</kbd><span>Scanner</span></div>
-            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>2</kbd><span>Prober</span></div>
-            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>3</kbd><span>Recon Suite</span></div>
-            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>4</kbd><span>Settings</span></div>
-            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>5</kbd><span>Toolkit</span></div>
+            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>2</kbd><span data-i18n="nav_prober">Prober</span></div>
+            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>3</kbd><span data-i18n="nav_recon">Recon Suite</span></div>
+            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>4</kbd><span data-i18n="nav_settings">Settings</span></div>
+            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>5</kbd><span data-i18n="nav_toolkit">Toolkit</span></div>
             <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>F</kbd><span>Focus Filter</span></div>
             <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>E</kbd><span>Export Results</span></div>
             <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>Enter</kbd><span>Start Scan</span></div>
@@ -999,6 +1005,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/js-beautify@1.15.1/js/lib/beautify.js"></script>
+  <script src="i18n.js?v=20260721-v5"></script>
   <script src="script.js?v=20260721-v5"></script>
   <script src="toolkit.js?v=20260721-v5"></script>
   <script src="toolkit2.js?v=20260721-v5"></script>

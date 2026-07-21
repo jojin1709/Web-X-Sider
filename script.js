@@ -877,6 +877,7 @@ document.querySelectorAll(".lang-btn").forEach(btn => {
     btn.classList.add("active");
     const lang = btn.dataset.lang;
     try { localStorage.setItem("web-x-sider:lang", lang); } catch {}
+    if (typeof applyI18n === "function") applyI18n(lang);
   });
 });
 
@@ -3970,7 +3971,7 @@ function buildWaybackApi(host, includeSubdomains = false) {
   return `https://web.archive.org/cdx/search/cdx?${cdxParams.toString()}`;
 }
 
-function fetchWaybackJsonp(apiUrl, timeoutMs = 9000) {
+function fetchWaybackJsonp(apiUrl, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
     const callbackName = `__webXSiderWayback_${Date.now()}_${Math.random().toString(16).slice(2)}`;
     const script = document.createElement("script");
@@ -4005,8 +4006,8 @@ function fetchWaybackJsonp(apiUrl, timeoutMs = 9000) {
 
 async function fetchWaybackRows(apiUrls) {
   const attempts = [
-    (apiUrl) => fetchWaybackJsonp(apiUrl),
-    (apiUrl) => fetch(apiUrl, { headers: { Accept: "application/json" } }),
+    (apiUrl) => fetchWaybackJsonp(apiUrl, 15000),
+    (apiUrl) => fetch(apiUrl, { headers: { Accept: "application/json" }, mode: "cors" }),
     (apiUrl) => fetchTarget(apiUrl, { headers: { Accept: "application/json" } })
   ];
   const errors = [];
