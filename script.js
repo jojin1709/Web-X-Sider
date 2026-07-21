@@ -847,6 +847,98 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 document.getElementById("saveSettingsBtn")?.addEventListener("click", saveSettings);
 
+// Settings Tabs
+document.querySelectorAll(".settings-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".settings-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    const tabName = tab.dataset.settingsTab;
+    document.querySelectorAll(".settings-content").forEach(c => c.style.display = "none");
+    const content = document.getElementById(`settings-${tabName}`);
+    if (content) content.style.display = "block";
+  });
+});
+
+// Theme buttons in Settings
+document.querySelectorAll(".theme-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".theme-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    const theme = btn.dataset.theme;
+    document.documentElement.setAttribute("data-theme", theme);
+    try { localStorage.setItem("web-x-sider:theme", theme); } catch {}
+  });
+});
+
+// Language buttons in Settings
+document.querySelectorAll(".lang-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".lang-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    const lang = btn.dataset.lang;
+    try { localStorage.setItem("web-x-sider:lang", lang); } catch {}
+  });
+});
+
+// Profile apply buttons
+document.querySelectorAll(".profile-apply").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const delay = btn.dataset.delay;
+    const concurrency = btn.dataset.concurrency;
+    const delayInput = document.getElementById("setting-crawlerDelay");
+    const concInput = document.getElementById("setting-concurrency");
+    if (delayInput) delayInput.value = delay;
+    if (concInput) concInput.value = concurrency;
+    document.querySelectorAll(".profile-card").forEach(c => c.classList.remove("active"));
+    btn.closest(".profile-card").classList.add("active");
+    showToast(`Profile applied: delay=${delay}ms, concurrency=${concurrency}`, "success");
+  });
+});
+
+// Alert save button
+document.getElementById("alertSave")?.addEventListener("click", () => {
+  try {
+    localStorage.setItem("web-x-sider:alerts", JSON.stringify({
+      webhook: document.getElementById("alertWebhook")?.value || "",
+      critical: document.getElementById("alertCritical")?.checked,
+      high: document.getElementById("alertHigh")?.checked,
+      medium: document.getElementById("alertMedium")?.checked,
+      scanComplete: document.getElementById("alertScanComplete")?.checked
+    }));
+    showToast("Alert settings saved", "success");
+  } catch {}
+});
+
+// Accessibility toggles
+document.getElementById("a11yHighContrast")?.addEventListener("change", (e) => {
+  document.documentElement.classList.toggle("high-contrast", e.target.checked);
+});
+document.getElementById("a11yLargeText")?.addEventListener("change", (e) => {
+  document.documentElement.classList.toggle("large-text", e.target.checked);
+});
+document.getElementById("a11yReduceMotion")?.addEventListener("change", (e) => {
+  document.documentElement.classList.toggle("reduce-motion", e.target.checked);
+});
+
+// Load saved preferences
+try {
+  const savedTheme = localStorage.getItem("web-x-sider:theme");
+  if (savedTheme) {
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    document.querySelectorAll(".theme-btn").forEach(b => b.classList.toggle("active", b.dataset.theme === savedTheme));
+  }
+  const savedLang = localStorage.getItem("web-x-sider:lang");
+  if (savedLang) {
+    document.querySelectorAll(".lang-btn").forEach(b => b.classList.toggle("active", b.dataset.lang === savedLang));
+  }
+  const savedAlerts = JSON.parse(localStorage.getItem("web-x-sider:alerts") || "{}");
+  if (savedAlerts.webhook) document.getElementById("alertWebhook").value = savedAlerts.webhook;
+  if (savedAlerts.critical !== undefined) document.getElementById("alertCritical").checked = savedAlerts.critical;
+  if (savedAlerts.high !== undefined) document.getElementById("alertHigh").checked = savedAlerts.high;
+  if (savedAlerts.medium !== undefined) document.getElementById("alertMedium").checked = savedAlerts.medium;
+  if (savedAlerts.scanComplete !== undefined) document.getElementById("alertScanComplete").checked = savedAlerts.scanComplete;
+} catch {}
+
 const isLocalAppHost = () => {
   const host = window.location.hostname;
   return host === "localhost" || host === "127.0.0.1" || host === "::1";

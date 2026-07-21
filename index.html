@@ -703,51 +703,183 @@
       <section class="glass-card glass-card-lg" style="padding:2rem;">
         <div class="card-header">
           <div class="card-icon"><i class="fas fa-gear"></i></div>
-          <div class="card-title"><h2>Settings</h2><p>Configure scan behavior and proxy</p></div>
+          <div class="card-title"><h2>Settings</h2><p>Configure scan behavior, appearance, and preferences</p></div>
         </div>
-        <div class="advanced-scan-grid">
-          <div class="advanced-scan-field glass-input">
-            <label>Crawler delay (ms)</label>
-            <input type="number" id="setting-crawlerDelay" value="300" min="0" max="5000" step="50" />
+
+        <!-- Settings Tabs -->
+        <div class="settings-tabs" id="settings-tabs">
+          <button class="settings-tab active" data-settings-tab="scan"><i class="fas fa-sliders"></i><span>Scan</span></button>
+          <button class="settings-tab" data-settings-tab="proxy"><i class="fas fa-server"></i><span>Proxy</span></button>
+          <button class="settings-tab" data-settings-tab="theme"><i class="fas fa-palette"></i><span>Theme</span></button>
+          <button class="settings-tab" data-settings-tab="language"><i class="fas fa-language"></i><span>Language</span></button>
+          <button class="settings-tab" data-settings-tab="shortcuts"><i class="fas fa-keyboard"></i><span>Shortcuts</span></button>
+          <button class="settings-tab" data-settings-tab="alerts"><i class="fas fa-bell"></i><span>Alerts</span></button>
+          <button class="settings-tab" data-settings-tab="profiles"><i class="fas fa-bolt"></i><span>Profiles</span></button>
+          <button class="settings-tab" data-settings-tab="accessibility"><i class="fas fa-universal-access"></i><span>A11y</span></button>
+        </div>
+
+        <!-- Scan Settings -->
+        <div id="settings-scan" class="settings-content">
+          <h3><i class="fas fa-sliders"></i> Scan Configuration</h3>
+          <div class="advanced-scan-grid">
+            <div class="advanced-scan-field glass-input">
+              <label>Crawler delay (ms)</label>
+              <input type="number" id="setting-crawlerDelay" value="300" min="0" max="5000" step="50" />
+            </div>
+            <div class="advanced-scan-field glass-input">
+              <label>Prober delay (ms)</label>
+              <input type="number" id="setting-proberDelay" value="450" min="0" max="5000" step="50" />
+            </div>
+            <div class="advanced-scan-field glass-input">
+              <label>Concurrent requests</label>
+              <input type="number" id="setting-concurrency" value="5" min="1" max="20" step="1" />
+            </div>
           </div>
-          <div class="advanced-scan-field glass-input">
-            <label>Prober delay (ms)</label>
-            <input type="number" id="setting-proberDelay" value="450" min="0" max="5000" step="50" />
+        </div>
+
+        <!-- Proxy Settings -->
+        <div id="settings-proxy" class="settings-content" style="display:none;">
+          <h3><i class="fas fa-server"></i> Proxy Configuration</h3>
+          <div class="advanced-scan-grid">
+            <div class="advanced-scan-field glass-input">
+              <label>Custom remote proxy URL</label>
+              <input type="url" id="setting-proxyUrl" placeholder="https://your-worker.workers.dev/?url=" />
+            </div>
+            <div class="advanced-scan-field glass-input">
+              <label>FlareSolverr endpoint</label>
+              <input type="url" id="setting-flaresolverrUrl" placeholder="http://127.0.0.1:8191/v1" />
+              <div class="field-status">Optional. Used as a fallback after bot-protection pages are detected.</div>
+            </div>
+            <div class="advanced-scan-field glass-input">
+              <label>FlareSolverr fallback</label>
+              <label style="display:flex;align-items:center;gap:8px;margin-top:8px;color:rgba(255,255,255,0.75);font-size:13px;">
+                <input type="checkbox" id="setting-flaresolverrEnabled" />
+                Enable challenge-solver retry for authorized scans
+              </label>
+            </div>
+            <div class="advanced-scan-field glass-input">
+              <label>Custom User-Agent</label>
+              <input type="text" id="setting-userAgent" placeholder="Leave blank for default" />
+            </div>
+            <div class="advanced-scan-field glass-input">
+              <label>Auth headers (one per line: Header: Value)</label>
+              <textarea id="setting-authHeaders" rows="3" placeholder="Authorization: Bearer eyJ...&#10;Cookie: session=abc123"></textarea>
+            </div>
+            <div class="advanced-scan-field glass-input">
+              <label>Custom secret patterns (JSON: {&quot;Name&quot;: &quot;regex&quot;})</label>
+              <textarea id="setting-customSecrets" rows="3" placeholder='{"My Token": "/myapp_[a-z0-9]{32}/g"}'></textarea>
+            </div>
           </div>
-          <div class="advanced-scan-field glass-input">
-            <label>Concurrent requests</label>
-            <input type="number" id="setting-concurrency" value="5" min="1" max="20" step="1" />
+        </div>
+
+        <!-- Theme Settings -->
+        <div id="settings-theme" class="settings-content" style="display:none;">
+          <h3><i class="fas fa-palette"></i> Theme</h3>
+          <div class="theme-grid">
+            <button class="theme-btn active" data-theme="dark"><i class="fas fa-moon"></i><span>Dark</span></button>
+            <button class="theme-btn" data-theme="light"><i class="fas fa-sun"></i><span>Light</span></button>
+            <button class="theme-btn" data-theme="auto"><i class="fas fa-circle-half-stroke"></i><span>Auto</span></button>
           </div>
-          <div class="advanced-scan-field glass-input">
-            <label>Custom remote proxy URL</label>
-            <input type="url" id="setting-proxyUrl" placeholder="https://your-worker.workers.dev/?url=" />
+        </div>
+
+        <!-- Language Settings -->
+        <div id="settings-language" class="settings-content" style="display:none;">
+          <h3><i class="fas fa-language"></i> Language</h3>
+          <div class="lang-grid">
+            <button class="lang-btn active" data-lang="en">English</button>
+            <button class="lang-btn" data-lang="es">Español</button>
+            <button class="lang-btn" data-lang="fr">Français</button>
+            <button class="lang-btn" data-lang="de">Deutsch</button>
+            <button class="lang-btn" data-lang="pt">Português</button>
+            <button class="lang-btn" data-lang="ar">العربية</button>
           </div>
-          <div class="advanced-scan-field glass-input">
-            <label>FlareSolverr endpoint</label>
-            <input type="url" id="setting-flaresolverrUrl" placeholder="http://127.0.0.1:8191/v1" />
-            <div class="field-status">Optional. Used as a fallback after bot-protection pages are detected.</div>
+        </div>
+
+        <!-- Keyboard Shortcuts -->
+        <div id="settings-shortcuts" class="settings-content" style="display:none;">
+          <h3><i class="fas fa-keyboard"></i> Keyboard Shortcuts</h3>
+          <div class="shortcuts-grid">
+            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>1</kbd><span>Scanner</span></div>
+            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>2</kbd><span>Prober</span></div>
+            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>3</kbd><span>Recon Suite</span></div>
+            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>4</kbd><span>Settings</span></div>
+            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>5</kbd><span>Toolkit</span></div>
+            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>F</kbd><span>Focus Filter</span></div>
+            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>E</kbd><span>Export Results</span></div>
+            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>Enter</kbd><span>Start Scan</span></div>
+            <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>S</kbd><span>Save Session</span></div>
+            <div class="shortcut-item"><kbd>Escape</kbd><span>Stop Scan</span></div>
           </div>
-          <div class="advanced-scan-field glass-input">
-            <label>FlareSolverr fallback</label>
-            <label style="display:flex;align-items:center;gap:8px;margin-top:8px;color:rgba(255,255,255,0.75);font-size:13px;">
-              <input type="checkbox" id="setting-flaresolverrEnabled" />
-              Enable challenge-solver retry for authorized scans
+        </div>
+
+        <!-- Alert Settings -->
+        <div id="settings-alerts" class="settings-content" style="display:none;">
+          <h3><i class="fas fa-bell"></i> Alert Configuration</h3>
+          <div class="alert-form">
+            <label>Webhook URL (Discord/Slack)</label>
+            <input type="url" id="alertWebhook" placeholder="https://discord.com/api/webhooks/..." style="width:100%;padding:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;" />
+            <label style="margin-top:1rem;">Alert on:</label>
+            <div class="alert-checkboxes">
+              <label><input type="checkbox" id="alertCritical" checked /> Critical findings</label>
+              <label><input type="checkbox" id="alertHigh" checked /> High findings</label>
+              <label><input type="checkbox" id="alertMedium" /> Medium findings</label>
+              <label><input type="checkbox" id="alertScanComplete" checked /> Scan complete</label>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:1rem;">
+              <button id="alertSave" class="btn btn-primary"><i class="fas fa-save"></i><span>Save</span></button>
+              <button id="alertTest" class="btn btn-secondary"><i class="fas fa-paper-plane"></i><span>Test Alert</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scan Profiles -->
+        <div id="settings-profiles" class="settings-content" style="display:none;">
+          <h3><i class="fas fa-bolt"></i> Scan Profiles</h3>
+          <div class="profile-grid">
+            <div class="profile-card" data-profile="stealth">
+              <i class="fas fa-user-secret"></i>
+              <h4>Stealth</h4>
+              <p>Slow, careful scanning</p>
+              <ul><li>Delay: 1000ms</li><li>Concurrency: 2</li></ul>
+              <button class="profile-apply" data-delay="1000" data-concurrency="2">Apply</button>
+            </div>
+            <div class="profile-card active" data-profile="normal">
+              <i class="fas fa-balance-scale"></i>
+              <h4>Normal</h4>
+              <p>Balanced speed and coverage</p>
+              <ul><li>Delay: 300ms</li><li>Concurrency: 5</li></ul>
+              <button class="profile-apply" data-delay="300" data-concurrency="5">Apply</button>
+            </div>
+            <div class="profile-card" data-profile="aggressive">
+              <i class="fas fa-bolt"></i>
+              <h4>Aggressive</h4>
+              <p>Fast, maximum coverage</p>
+              <ul><li>Delay: 100ms</li><li>Concurrency: 10</li></ul>
+              <button class="profile-apply" data-delay="100" data-concurrency="10">Apply</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accessibility Settings -->
+        <div id="settings-accessibility" class="settings-content" style="display:none;">
+          <h3><i class="fas fa-universal-access"></i> Accessibility</h3>
+          <div class="a11y-options">
+            <label class="a11y-toggle">
+              <input type="checkbox" id="a11yHighContrast" />
+              <span>High Contrast Mode</span>
+            </label>
+            <label class="a11y-toggle">
+              <input type="checkbox" id="a11yLargeText" />
+              <span>Larger Text</span>
+            </label>
+            <label class="a11y-toggle">
+              <input type="checkbox" id="a11yReduceMotion" />
+              <span>Reduce Animations</span>
             </label>
           </div>
-          <div class="advanced-scan-field glass-input">
-            <label>Custom User-Agent</label>
-            <input type="text" id="setting-userAgent" placeholder="Leave blank for default" />
-          </div>
-          <div class="advanced-scan-field glass-input">
-            <label>Auth headers (one per line: Header: Value)</label>
-            <textarea id="setting-authHeaders" rows="3" placeholder="Authorization: Bearer eyJ...&#10;Cookie: session=abc123"></textarea>
-          </div>
-          <div class="advanced-scan-field glass-input">
-            <label>Custom secret patterns (JSON: {&quot;Name&quot;: &quot;regex&quot;})</label>
-            <textarea id="setting-customSecrets" rows="3" placeholder='{"My Token": "/myapp_[a-z0-9]{32}/g"}'></textarea>
-          </div>
         </div>
-        <button id="saveSettingsBtn" class="btn btn-primary" style="margin-top:1rem;">
+
+        <button id="saveSettingsBtn" class="btn btn-primary" style="margin-top:1.5rem;">
           <i class="fas fa-save"></i><span>Save Settings</span>
         </button>
       </section>
