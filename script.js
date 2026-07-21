@@ -2037,16 +2037,20 @@ const crawlerSection = document.getElementById("crawler-section");
 const proberSection = document.getElementById("prober-section");
 const reconSection = document.getElementById("recon-section");
 const settingsPanel = document.getElementById("settings-panel");
+const navToolkit = document.getElementById("navToolkit");
+const toolkitSection = document.getElementById("toolkit-section");
 
 function showMainPanel(panel) {
   crawlerSection.style.display = panel === "crawler" ? "block" : "none";
   proberSection.style.display = panel === "prober" ? "block" : "none";
   reconSection.style.display = panel === "recon" ? "block" : "none";
   if (settingsPanel) settingsPanel.style.display = panel === "settings" ? "block" : "none";
+  if (toolkitSection) toolkitSection.style.display = panel === "toolkit" ? "block" : "none";
   navCrawler.classList.toggle("active", panel === "crawler");
   navProber.classList.toggle("active", panel === "prober");
   navRecon.classList.toggle("active", panel === "recon");
   navSettings?.classList.toggle("active", panel === "settings");
+  navToolkit?.classList.toggle("active", panel === "toolkit");
 }
 
 navCrawler.onclick = () => {

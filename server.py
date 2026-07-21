@@ -260,6 +260,7 @@ class WebXSiderHandler(SimpleHTTPRequestHandler):
             status = int(solution.get("status") or 200)
             headers = solution.get("headers") or {}
 
+            self._is_proxy_response = True
             self.send_response(status)
             self.send_header("X-Web-X-Sider-FlareSolverr", "local")
             for name, value in headers.items():
@@ -271,7 +272,16 @@ class WebXSiderHandler(SimpleHTTPRequestHandler):
                 name = cookie.get("name")
                 value = cookie.get("value")
                 if name and value:
-                    self.send_header(f"X-Web-X-Sider-Set-Cookie-{index}", f"{name}={value}")
+                    cookie_str = f"{name}={value}"
+                    if cookie.get("domain"):
+                        cookie_str += f"; Domain={cookie['domain']}"
+                    if cookie.get("path"):
+                        cookie_str += f"; Path={cookie['path']}"
+                    if cookie.get("secure"):
+                        cookie_str += "; Secure"
+                    if cookie.get("httpOnly"):
+                        cookie_str += "; HttpOnly"
+                    self.send_header(f"X-Web-X-Sider-Set-Cookie-{index}", cookie_str)
             self.end_headers()
             self.wfile.write(response_body)
         except HTTPError as error:

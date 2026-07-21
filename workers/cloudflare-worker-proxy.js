@@ -1,3 +1,9 @@
+/* ============================================================
+   Web X Sider — Cloudflare Worker Proxy v2.5
+   Features: SSRF protection, FlareSolverr fallback,
+   multi-cookie forwarding, User-Agent rotation for WAF bypass.
+   ============================================================ */
+
 const HOP_BY_HOP_HEADERS = new Set([
   "connection",
   "keep-alive",
@@ -10,6 +16,30 @@ const HOP_BY_HOP_HEADERS = new Set([
   "content-encoding",
   "content-length"
 ]);
+
+// User-Agent rotation pool for WAF bypass
+const USER_AGENTS = [
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15",
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 14.5; rv:127.0) Gecko/20100101 Firefox/127.0"
+];
+
+// Blocked hostname patterns for SSRF protection
+const BLOCKED_HOSTNAME_PATTERNS = [
+  /^localhost$/i,
+  /^127\./i,
+  /^10\./i,
+  /^172\.(1[6-9]|2\d|3[01])\./i,
+  /^192\.168\./i,
+  /^169\.254\./i,
+  /^0\./i,
+  /^100\.64\./i,
+  /^::1$/i,
+  /^fc00:/i,
+  /^fe80:/i
+];
 
 function corsHeaders() {
   return {
@@ -24,6 +54,15 @@ function responseFromText(text, status = 200) {
   return new Response(text, { status, headers: corsHeaders() });
 }
 
+function getRandomUA() {
+  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+}
+
+function isBlockedHost(hostname) {
+  if (!hostname) return true;
+  return BLOCKED_HOSTNAME_PATTERNS.some(pattern => pattern.test(hostname));
+}
+
 function validateTarget(rawUrl) {
   let target;
   try {
@@ -36,26 +75,46 @@ function validateTarget(rawUrl) {
     return { error: responseFromText("Only http and https URLs are allowed", 400) };
   }
 
+  if (isBlockedHost(target.hostname)) {
+    return { error: responseFromText("Target host is blocked (SSRF protection)", 403) };
+  }
+
   return { target };
 }
 
 function copyResponseHeaders(sourceHeaders, extra = {}) {
   const headers = new Headers(corsHeaders());
   Object.entries(extra).forEach(([key, value]) => headers.set(key, value));
+
+  let cookieIndex = 0;
   sourceHeaders.forEach((value, key) => {
     const lowered = key.toLowerCase();
     if (HOP_BY_HOP_HEADERS.has(lowered)) return;
     if (lowered.startsWith("access-control-")) return;
-    if (lowered === "set-cookie") headers.set("X-Web-X-Sider-Set-Cookie-0", value);
-    else headers.set(key, value);
+    if (lowered === "set-cookie") {
+      headers.set(`X-Web-X-Sider-Set-Cookie-${cookieIndex}`, value);
+      cookieIndex++;
+    } else {
+      headers.set(key, value);
+    }
   });
   return headers;
 }
 
 async function fetchNormally(request, requestUrl, target) {
+  const customUA = request.headers.get("X-Web-X-Sider-User-Agent");
   const proxyHeaders = {
-    "User-Agent": request.headers.get("X-Web-X-Sider-User-Agent") || "WebXSider-Worker/2.0",
-    "Accept": "*/*"
+    "User-Agent": customUA || getRandomUA(),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Cache-Control": "max-age=0"
   };
 
   const contentType = request.headers.get("content-type");
@@ -63,6 +122,9 @@ async function fetchNormally(request, requestUrl, target) {
 
   const origin = requestUrl.searchParams.get("origin");
   if (origin) proxyHeaders.Origin = origin;
+
+  const referer = requestUrl.searchParams.get("referer");
+  if (referer) proxyHeaders.Referer = referer;
 
   const response = await fetch(target.toString(), {
     method: request.method,
@@ -79,10 +141,7 @@ async function fetchNormally(request, requestUrl, target) {
 }
 
 async function fetchViaFlareSolverr(request, env, target) {
-  const flaresolverrUrl = env?.FLARESOLVERR_URL;
-  if (!flaresolverrUrl) {
-    return responseFromText("FlareSolverr route is not configured. Set FLARESOLVERR_URL on the Worker.", 501);
-  }
+  const flaresolverrUrl = env?.FLARESOLVERR_URL || "http://127.0.0.1:8191/v1";
 
   const payload = {
     cmd: request.method === "POST" ? "request.post" : "request.get",
@@ -90,8 +149,15 @@ async function fetchViaFlareSolverr(request, env, target) {
     maxTimeout: 60000,
     disableMedia: true
   };
+
   if (request.method === "POST") {
     payload.postData = await request.text();
+  }
+
+  // Add headers to FlareSolverr session
+  const customUA = request.headers.get("X-Web-X-Sider-User-Agent");
+  if (customUA) {
+    payload.userAgent = customUA;
   }
 
   const solverResponse = await fetch(flaresolverrUrl, {
@@ -112,17 +178,33 @@ async function fetchViaFlareSolverr(request, env, target) {
     return responseFromText(`FlareSolverr returned non-JSON: ${solverText.slice(0, 240)}`, 502);
   }
 
+  if (parsed.status !== "ok") {
+    return responseFromText(`FlareSolverr error: ${parsed.message || "unknown error"}`, 502);
+  }
+
   const solution = parsed.solution || {};
   const headers = new Headers(corsHeaders());
   headers.set("X-Web-X-Sider-FlareSolverr", "worker");
+
+  // Forward response headers
   Object.entries(solution.headers || {}).forEach(([key, value]) => {
     const lowered = key.toLowerCase();
-    if (HOP_BY_HOP_HEADERS.has(lowered) || lowered === "set-cookie") return;
+    if (HOP_BY_HOP_HEADERS.has(lowered)) return;
+    if (lowered.startsWith("access-control-")) return;
+    if (lowered === "set-cookie") return; // Handle cookies separately
     headers.set(key, String(value));
   });
+
+  // Forward cookies
   (solution.cookies || []).slice(0, 20).forEach((cookie, index) => {
     if (cookie.name && cookie.value) {
-      headers.set(`X-Web-X-Sider-Set-Cookie-${index}`, `${cookie.name}=${cookie.value}`);
+      let cookieStr = `${cookie.name}=${cookie.value}`;
+      if (cookie.domain) cookieStr += `; Domain=${cookie.domain}`;
+      if (cookie.path) cookieStr += `; Path=${cookie.path}`;
+      if (cookie.expires) cookieStr += `; Expires=${new Date(cookie.expires * 1000).toUTCString()}`;
+      if (cookie.secure) cookieStr += "; Secure";
+      if (cookie.httpOnly) cookieStr += "; HttpOnly";
+      headers.set(`X-Web-X-Sider-Set-Cookie-${index}`, cookieStr);
     }
   });
 
@@ -141,6 +223,8 @@ export default {
     }
 
     const requestUrl = new URL(request.url);
+
+    // If no ?url= param, serve static assets or show status
     if (!requestUrl.searchParams.has("url")) {
       if (env.ASSETS) return env.ASSETS.fetch(request);
       return responseFromText("Web X Sider proxy is running. Add ?url=https://example.com");

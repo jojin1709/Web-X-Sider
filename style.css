@@ -2640,3 +2640,485 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ==================== ENHANCED TOOLKIT PANELS ==================== */
+.tk-panel {
+  padding: var(--space-lg) 0;
+}
+
+.tk-panel .advanced-scan-field {
+  background: rgba(15, 23, 42, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+}
+
+.tk-panel .advanced-scan-field:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(15, 23, 42, 0.52);
+}
+
+.tk-panel .advanced-scan-field:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+}
+
+.tk-panel .btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.tk-panel .btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
+}
+
+.tk-panel .btn:hover::after {
+  transform: translateX(100%);
+}
+
+/* Toolkit tab buttons enhanced */
+#toolkit-tabs .tab-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+#toolkit-tabs .tab-btn::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+#toolkit-tabs .tab-btn:hover::before,
+#toolkit-tabs .tab-btn.active::before {
+  width: 80%;
+}
+
+#toolkit-tabs .tab-btn.active {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+}
+
+#toolkit-tabs .tab-btn i {
+  transition: transform 0.2s ease;
+}
+
+#toolkit-tabs .tab-btn:hover i {
+  transform: scale(1.15);
+}
+
+/* ==================== ENHANCED BUTTON EFFECTS ==================== */
+.btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+.btn:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+/* ==================== ENHANCED GLASS CARDS ==================== */
+.glass-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.03) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.glass-card:hover::after {
+  opacity: 1;
+}
+
+/* ==================== ENHANCED STAT CARDS ==================== */
+.stat-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+.stat-card:active {
+  transform: translateY(-2px) scale(1.01);
+}
+
+/* ==================== ENHANCED PROBER RESULTS ==================== */
+.prober-line {
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.prober-line:hover {
+  background: rgba(99, 102, 241, 0.08);
+  border-left-color: var(--primary);
+}
+
+.prober-line.status-200:hover {
+  border-left-color: var(--success);
+}
+
+.prober-line.status-403:hover {
+  border-left-color: var(--warning);
+}
+
+.prober-line.status-404:hover {
+  border-left-color: var(--danger);
+}
+
+/* ==================== ENHANCED EXPORT BUTTONS ==================== */
+.export-btn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.export-btn:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 12px 35px rgba(99, 102, 241, 0.45);
+}
+
+.export-btn:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
+.export-btn i {
+  transition: all 0.3s ease;
+}
+
+.export-btn:hover i {
+  transform: scale(1.2) rotate(5deg);
+}
+
+/* ==================== ENHANCED FILTER TABS ==================== */
+.tab-btn,
+.severity-filter,
+.preset-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.tab-btn::after,
+.severity-filter::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tab-btn:hover::after,
+.severity-filter:hover::after {
+  opacity: 1;
+}
+
+/* ==================== ENHANCED RECON CARDS ==================== */
+.recon-card {
+  transition: all 0.3s ease;
+  border-left: 4px solid var(--primary-light);
+}
+
+.recon-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.recon-metric {
+  transition: all 0.3s ease;
+}
+
+.recon-metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* ==================== ENHANCED PROGRESS BAR ==================== */
+.progress-bar {
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: progressShine 2s infinite;
+}
+
+@keyframes progressShine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ==================== ENHANCED INPUT FOCUS ==================== */
+.glass-input input:focus,
+.glass-input textarea:focus {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 4px rgba(99, 102, 241, 0.15),
+    0 8px 30px rgba(99, 102, 241, 0.1);
+}
+
+/* ==================== SMOOTH SCROLLBAR ==================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.4);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.6);
+}
+
+/* ==================== ENHANCED SEVERITY BADGES ==================== */
+.severity-badge {
+  position: relative;
+  overflow: hidden;
+}
+
+.severity-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.severity-badge:hover::before {
+  opacity: 1;
+}
+
+/* ==================== COPY BUTTON ANIMATION ==================== */
+.copy-btn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.copy-btn:active {
+  transform: scale(0.85);
+}
+
+.copy-btn.copied {
+  animation: copiedPulse 0.5s ease;
+}
+
+@keyframes copiedPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* ==================== FLOATING NAV ENHANCEMENT ==================== */
+.floating-nav {
+  transition: all 0.3s ease;
+}
+
+.floating-nav:hover {
+  box-shadow: var(--shadow-lg), 0 0 60px rgba(99, 102, 241, 0.25);
+}
+
+.nav-link {
+  position: relative;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.nav-link:hover::after {
+  width: 60%;
+}
+
+.nav-link.active::after {
+  width: 80%;
+}
+
+/* ==================== HERO SECTION ENHANCEMENT ==================== */
+.hero-badge {
+  animation: heroBadgePulse 3s ease-in-out infinite;
+}
+
+@keyframes heroBadgePulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.2); }
+  50% { box-shadow: 0 0 30px rgba(99, 102, 241, 0.4); }
+}
+
+.glass-chip {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-chip:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* ==================== MOBILE MENU ENHANCEMENT ==================== */
+.mobile-menu {
+  backdrop-filter: blur(20px) saturate(180%);
+}
+
+.mobile-nav-link {
+  position: relative;
+  overflow: hidden;
+}
+
+.mobile-nav-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  background: linear-gradient(180deg, var(--primary), var(--secondary));
+  transition: height 0.3s ease;
+  transform: translateY(-50%);
+  border-radius: 0 2px 2px 0;
+}
+
+.mobile-nav-link:hover::before,
+.mobile-nav-link.active::before {
+  height: 60%;
+}
+
+/* ==================== TOAST NOTIFICATION ENHANCEMENT ==================== */
+#toast-container > div {
+  animation: toastSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* ==================== LOADING SPINNER ENHANCEMENT ==================== */
+.fa-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ==================== DETAILS/SUMMARY ENHANCEMENT ==================== */
+details {
+  transition: all 0.3s ease;
+}
+
+details[open] {
+  animation: detailsOpen 0.3s ease;
+}
+
+@keyframes detailsOpen {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+details summary {
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+details summary:hover {
+  color: var(--primary-light);
+}
+
+/* ==================== RESPONSIVE GRID ENHANCEMENT ==================== */
+@media (min-width: 1024px) {
+  .advanced-scan-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .advanced-scan-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ==================== PRINT STYLES ==================== */
+@media print {
+  .floating-nav,
+  .mobile-nav,
+  .mobile-menu,
+  .bg-wrapper,
+  .btn,
+  .export-section {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+
+  .glass-card {
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: none;
+  }
+}

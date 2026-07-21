@@ -869,6 +869,7 @@
   <script src="https://cdn.jsdelivr.net/npm/js-beautify@1.15.1/js/lib/beautify.js"></script>
   <script src="script.js?v=20260514-flaresolverr1"></script>
   <script src="toolkit.js"></script>
+  <script src="toolkit2.js"></script>
   <script>
     // Mobile menu toggle
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
@@ -885,11 +886,14 @@
     const navReconMobile = document.getElementById('navReconMobile');
     const navSettingsMobile = document.getElementById('navSettingsMobile');
 
+    const navToolkitMobile = document.getElementById('navToolkitMobile');
+
     const setMobileActive = (active) => {
       navCrawlerMobile?.classList.toggle('active', active === 'crawler');
       navProberMobile?.classList.toggle('active', active === 'prober');
       navReconMobile?.classList.toggle('active', active === 'recon');
       navSettingsMobile?.classList.toggle('active', active === 'settings');
+      navToolkitMobile?.classList.toggle('active', active === 'toolkit');
     };
 
     navCrawlerMobile?.addEventListener('click', function () {
@@ -916,6 +920,13 @@
     navSettingsMobile?.addEventListener('click', function () {
       document.getElementById('navSettings').click();
       setMobileActive('settings');
+      mobileMenu.classList.remove('active');
+      mobileMenuBtn.classList.remove('active');
+    });
+
+    navToolkitMobile?.addEventListener('click', function () {
+      document.getElementById('navToolkit').click();
+      setMobileActive('toolkit');
       mobileMenu.classList.remove('active');
       mobileMenuBtn.classList.remove('active');
     });
