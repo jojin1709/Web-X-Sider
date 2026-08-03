@@ -56,7 +56,7 @@
           </div>
           <div class="dash-stat-card" data-color="green">
             <i class="fas fa-shield-halved"></i>
-            <span class="dash-stat-value" id="dashTools">76</span>
+            <span class="dash-stat-value" id="dashTools">104</span>
             <span class="dash-stat-label">Tools Available</span>
           </div>
         </div>

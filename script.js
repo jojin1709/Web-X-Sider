@@ -118,7 +118,6 @@ const waybackResults = document.getElementById("waybackResults");
 
 const allResults = [];
 const scannedJs = new Set(); // avoid duplicate scans across sources
-console.log("%c🕷️ Web X Sider V5.0 Initialized", "color: #0dcaf0; font-weight: bold; font-size: 1.2rem;");
 
 const sensitivePaths = [
   // 🌐 Standard .well-known files

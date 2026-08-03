@@ -24,7 +24,7 @@ The ultimate client-side reconnaissance tool for security researchers. Extract h
 - [What is Web X Sider?](#what-is-web-x-sider)
 - [Features](#features)
 - [Quick Start](#quick-start)
-- [56+ Tools Overview](#56-tools-overview)
+- [76+ Tools Overview](#76-tools-overview)
 - [Architecture](#architecture)
 - [Proxy Setup](#proxy-setup)
 - [Keyboard Shortcuts](#keyboard-shortcuts)
@@ -48,7 +48,7 @@ In bug bounty hunting, reconnaissance is 80% of the work. Web X Sider automates 
 - **Security Testing** — SQL injection, XSS, command injection, and more
 - **WAF Detection** — Identify which protection is in place before testing
 
-All **76 tools** run instantly in your browser with zero external dependencies.
+All **104 tools** run instantly in your browser with zero external dependencies.
 
 ---
 
@@ -62,18 +62,22 @@ All **76 tools** run instantly in your browser with zero external dependencies.
 | **Toolkit v2** | 8 | Race Condition, GraphQL Explorer, OAuth/PKCE, Request Smuggling, Prototype Pollution, Cache Poisoning, Bucket Enumeration, Nuclei Templates |
 | **Toolkit v3** | 25 | WAF Detection, Subdomain Enum, Open Redirect, Rate Limiting, Port Scan, Backup Finder, HTTP Methods, Clickjacking, Headers, SQLi, XSS, CMDi, Traversal, WebSocket, API Version, JWT Enhanced, OAuth, DNS Security, Email Security, Cloud Storage, Container, CI/CD, Mobile, Collaboration |
 | **Toolkit v4** | 13 | Dashboard, Reports, History, Targets, Shortcuts, Wordlist Manager, Scan Profiles, Alerts, OWASP/PCI/NIST Compliance, API Integration, i18n, Themes, Accessibility |
+| **Toolkit v5** | 12 | DNS Brute-Force, SSRF Helpers, WAF Bypass Payloads, CORS Deep Testing, CSP Bypass, Dir Brute, OAuth/SAML Deep, JWT Advanced Attacks, GraphQL Abuse, gRPC Detection, Business Logic, API Fuzzing |
+| **Toolkit v6** | 15 | Error Boundary, Scan Progress, Search Results, Scan Comparison, CVSS Calculator, Exports+, Screenshots, Plugins, Custom Checks, Vuln DB, GitHub Dorking, Email Harvesting, PII Detection, Wayback Deep, Shodan Lookup, Scheduling |
 
 ### Key Capabilities
 
 - **100% Client-Side** — No data leaves your browser
-- **76 Integrated Tools** — Complete bug bounty toolkit
+- **104 Integrated Tools** — Complete bug bounty toolkit
 - **12 Languages** — Full UI translation support
 - **Dark/Light Themes** — Customize your workspace
 - **Offline Support** — Works without internet (Service Worker)
-- **Export Multiple Formats** — JSON, CSV, HTML, PDF, Nuclei YAML, Burp XML, ffuf, sqlmap, HAR
-- **Compliance Checks** — OWASP Top 10, PCI DSS, NIST framework assessments
-- **Wordlist Management** — Upload, save, and manage custom wordlists
+- **Export Multiple Formats** — JSON, CSV, HTML, PDF, Nuclei YAML, Burp XML, ffuf, sqlmap, HAR, Nmap XML, Nikto CSV, Nessus, Markdown
+- **Compliance Checks** — OWASP Top 10, PCI DSS, NIST framework assessments with detailed scoring
+- **Wordlist Management** — Upload, save, and manage custom wordlists with presets
 - **API Integration** — Webhook alerts, external tool export, file import
+- **Security Testing** — DNS brute-force, SSRF helpers, WAF bypass, CORS/CSP deep testing, OAuth/SAML, JWT attacks, GraphQL abuse, gRPC detection, API fuzzing
+- **Productivity** — Error boundary, scan progress, search, scan comparison, CVSS calculator, plugins, custom checks, vuln DB, GitHub dorking, email/phone harvesting, screenshots, Shodan
 
 ---
 
@@ -83,7 +87,7 @@ Just visit **[web-x-sider.mmkoji856.workers.dev](https://web-x-sider.mmkoji856.w
 
 ---
 
-## 76 Tools Overview
+## 104 Tools Overview
 
 ### Core Scanner (20 Tools)
 

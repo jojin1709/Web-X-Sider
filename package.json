@@ -1,0 +1,31 @@
+{
+  "name": "web-x-sider",
+  "version": "5.0.0",
+  "description": "Advanced JavaScript Crawler, Endpoint Discovery & Bug Bounty Toolkit",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 server.py",
+    "lint": "echo 'No linter configured yet'",
+    "test": "echo 'No tests configured yet'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jojin1709/Web-X-Sider.git"
+  },
+  "keywords": [
+    "security",
+    "bug-bounty",
+    "recon",
+    "crawler",
+    "endpoint-discovery",
+    "secret-detection",
+    "web-security",
+    "penetration-testing"
+  ],
+  "author": "Jojin John <jojin1709>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/jojin1709/Web-X-Sider/issues"
+  },
+  "homepage": "https://github.com/jojin1709/Web-X-Sider#readme"
+}

@@ -1,4 +1,4 @@
-const CACHE_NAME = "web-x-sider-v5";
+const CACHE_NAME = "web-x-sider-v6";
 const ASSETS = [
   "/",
   "/index.html",
@@ -8,6 +8,8 @@ const ASSETS = [
   "/toolkit2.js",
   "/toolkit3.js",
   "/toolkit4.js",
+  "/toolkit5.js",
+  "/toolkit6.js",
   "/i18n.js",
   "/favicon.png"
 ];
