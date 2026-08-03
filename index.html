@@ -56,6 +56,7 @@
 </head>
 
 <body>
+  <a href="#main-content" class="skip-link" style="position:absolute;top:-100px;left:0;background:#0dcaf0;color:#000;padding:8px 16px;z-index:100001;text-decoration:none;font-weight:600;border-radius:0 0 8px 0;">Skip to content</a>
   <!-- Background Elements -->
   <div class="bg-wrapper">
     <div class="bg-gradient"></div>
@@ -66,32 +67,32 @@
   </div>
 
   <!-- ========== FLOATING NAVIGATION ========== -->
-  <nav class="floating-nav">
-    <a href="#" class="nav-logo">
-      <i class="fas fa-spider"></i>
+  <nav class="floating-nav" role="navigation" aria-label="Main navigation">
+    <a href="#" class="nav-logo" aria-label="Web X Sider Home">
+      <i class="fas fa-spider" aria-hidden="true"></i>
       <span>Web X Sider</span>
       <span class="nav-badge">V5.0</span>
     </a>
     <div class="nav-divider"></div>
-    <div class="nav-links">
-      <button id="navCrawler" class="nav-link active">
-        <i class="fas fa-search"></i>
+    <div class="nav-links" role="tablist" aria-label="Main sections">
+      <button id="navCrawler" class="nav-link active" role="tab" aria-selected="true" aria-controls="crawler-section">
+        <i class="fas fa-search" aria-hidden="true"></i>
         <span data-i18n="nav_scanner">Crawler</span>
       </button>
-      <button id="navProber" class="nav-link">
-        <i class="fas fa-crosshairs"></i>
+      <button id="navProber" class="nav-link" role="tab" aria-selected="false" aria-controls="prober-section">
+        <i class="fas fa-crosshairs" aria-hidden="true"></i>
         <span data-i18n="nav_prober">Prober</span>
       </button>
-      <button id="navRecon" class="nav-link">
-        <i class="fas fa-shield-halved"></i>
+      <button id="navRecon" class="nav-link" role="tab" aria-selected="false" aria-controls="recon-section">
+        <i class="fas fa-shield-halved" aria-hidden="true"></i>
         <span data-i18n="nav_recon">Recon Suite</span>
       </button>
-      <button id="navSettings" class="nav-link">
-        <i class="fas fa-gear"></i>
+      <button id="navSettings" class="nav-link" role="tab" aria-selected="false" aria-controls="settings-section">
+        <i class="fas fa-gear" aria-hidden="true"></i>
         <span data-i18n="nav_settings">Settings</span>
       </button>
-          <button id="navToolkit" class="nav-link">
-        <i class="fas fa-toolbox"></i>
+          <button id="navToolkit" class="nav-link" role="tab" aria-selected="false" aria-controls="toolkit-section">
+        <i class="fas fa-toolbox" aria-hidden="true"></i>
         <span data-i18n="nav_toolkit">Toolkit</span>
       </button>
     </div>
@@ -113,7 +114,7 @@
       <span>Web X Sider</span>
       <span class="mobile-badge">V5.0</span>
     </a>
-    <button class="mobile-menu-btn" id="mobileMenuBtn">
+    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobileMenu">
       <span></span>
       <span></span>
       <span></span>
@@ -152,7 +153,7 @@
     </a>
   </div>
 
-  <div class="wrapper">
+  <div class="wrapper" id="main-content">
     <!-- Hero Section -->
     <header class="hero-section">
       <div class="hero-badge glass-badge">
@@ -990,9 +991,9 @@
     </footer>
   </div>
 
-  <div id="toast-container" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;"></div>
+  <div id="toast-container" role="status" aria-live="polite" aria-atomic="true" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;"></div>
 
-  <div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center;">
+  <div id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center;">
     <div id="modal-box" style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:24px;min-width:320px;max-width:480px;width:90%;">
       <div id="modal-title" style="font-size:16px;font-weight:600;color:#fff;margin-bottom:12px;"></div>
       <input id="modal-input" type="text" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:14px;outline:none;display:none;" />

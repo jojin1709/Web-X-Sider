@@ -4075,3 +4075,191 @@ details summary:hover {
 .settings-content h3 i {
   color: var(--primary-light);
 }
+
+/* ============ TOOLKIT 5/6 PANEL STYLES ============ */
+
+.dnsbrute-section, .ssrf-section, .wafbypass-section, .corsdeep-section,
+.cspbypass-section, .dirbrute-section, .oauthsaml-section, .jwtadvanced-section,
+.graphqlabuse-section, .grpc-section, .bizlogic-section, .apifuzz-section,
+.scanprogress-section, .search-section, .scancompare-section, .cvss-section,
+.moreexports-section, .screenshot-section, .plugin-section, .customchecks-section,
+.vulndb-section, .githubdork-section, .emailharvest-section, .phonedetect-section,
+.waybackdeep-section, .shodan-section, .schedule-section {
+  padding: 20px;
+}
+
+.tool-desc { color: var(--text-dim); margin-bottom: 16px; font-size: 0.9em; }
+
+.dnsbrute-form, .ssrf-form, .wafbypass-form, .corsdeep-form, .cspbypass-form,
+.dirbrute-form, .graphql-form, .grpc-form, .apifuzz-form, .scancompare-select,
+.cvss-form, .githubdork-form, .emailharvest-form, .phonedetect-form,
+.waybackdeep-form, .shodan-form, .schedule-form, .plugin-form, .customchecks-form {
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+.dnsbrute-form label, .ssrf-form label, .wafbypass-form label, .corsdeep-form label,
+.dirbrute-form label, .graphql-form label, .grpc-form label, .apifuzz-form label,
+.cvss-form label, .githubdork-form label, .emailharvest-form label,
+.phonedetect-form label, .waybackdeep-form label, .shodan-form label,
+.schedule-form label, .plugin-form label, .customchecks-form label {
+  font-size: 0.85em; color: var(--text-dim); margin-top: 4px;
+}
+
+.dnsbrute-result, .ssrf-payload-item, .waf-payload-item, .corsdeep-result,
+.csp-finding, .dirbrute-result, .graphql-field, .grpc-result,
+.apifuzz-payload, .scancompare-item, .scanprogress-entry, .search-result-item,
+.vulndb-item, .githubdork-item, .emailharvest-item, .pii-item, .wayback-item {
+  padding: 8px 12px; margin-bottom: 4px; border-radius: 8px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+
+.dnsbrute-result:hover, .ssrf-payload-item:hover, .corsdeep-result:hover,
+.dirbrute-result:hover, .vulndb-item:hover, .githubdork-item:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.dnsbrute-name, .dnsbrute-ip { font-family: monospace; font-size: 0.9em; }
+.dnsbrute-ip { color: var(--text-dim); margin-left: auto; }
+
+.ssrf-payload-num, .waf-payload-num, .apifuzz-num {
+  color: var(--text-dim); font-size: 0.8em; min-width: 24px;
+}
+.ssrf-payload-code, .waf-payload-code, .csp-bypass-payload, code {
+  font-family: monospace; font-size: 0.85em; word-break: break-all;
+  background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;
+}
+
+.corsdeep-result-header { display: flex; align-items: center; gap: 8px; width: 100%; }
+.corsdeep-origin { font-family: monospace; font-size: 0.9em; }
+.corsdeep-risk { margin-left: auto; }
+.corsdeep-desc, .corsdeep-detail, .corsdeep-note { font-size: 0.85em; color: var(--text-dim); width: 100%; }
+.corsdeep-detail code { margin: 0 8px 0 0; }
+
+.corsdeep-result.critical { border-color: var(--danger); }
+.corsdeep-result.high { border-color: var(--warning); }
+.corsdeep-result.medium { border-color: var(--info); }
+
+.csp-finding { width: 100%; font-size: 0.9em; }
+.csp-header { padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 12px; word-break: break-all; font-size: 0.85em; }
+.csp-bypass-item { width: 100%; padding: 12px; margin-bottom: 8px; }
+.csp-bypass-name { font-weight: 600; margin-bottom: 4px; }
+.csp-bypass-desc { font-size: 0.85em; color: var(--text-dim); margin-bottom: 8px; }
+.csp-missing { padding: 12px; background: rgba(220,53,69,0.15); border: 1px solid var(--danger); border-radius: 8px; color: var(--danger); }
+
+.dirbrute-status { font-weight: 700; min-width: 36px; text-align: center; }
+.dirbrute-url { flex: 1; word-break: break-all; font-family: monospace; font-size: 0.9em; }
+.dirbrute-len { color: var(--text-dim); font-size: 0.85em; }
+
+.oauth-tab { padding: 8px 16px; border: 1px solid var(--border); background: transparent; color: var(--text); border-radius: 8px; cursor: pointer; }
+.oauth-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.oauth-tab-content { padding: 16px 0; }
+.oauth-checks, .oauth-payloads { margin-top: 12px; }
+.oauth-check { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.saml-attack { padding: 12px; margin-bottom: 8px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border); }
+.saml-attack h5 { margin-bottom: 4px; }
+.saml-attack p { font-size: 0.85em; color: var(--text-dim); margin-bottom: 8px; }
+.payload-list { display: flex; flex-direction: column; gap: 4px; }
+.payload-list code { display: block; padding: 4px 8px; }
+
+.jwt-attack-options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.jwt-attack-btn { padding: 6px 12px; }
+.jwt-section { padding: 12px; margin-bottom: 8px; background: rgba(255,255,255,0.03); border-radius: 8px; }
+.jwt-section h4 { margin-bottom: 8px; }
+.jwt-section pre { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 0.85em; max-height: 200px; }
+.jwt-forged { word-break: break-all; font-size: 0.8em; }
+.jwt-warning { padding: 8px 12px; margin-top: 8px; }
+
+.graphql-field code { flex: 1; }
+
+.grpc-result { width: 100%; }
+.grpc-test { flex: 1; font-family: monospace; font-size: 0.9em; }
+.grpc-result-status { font-weight: 600; min-width: 80px; }
+.grpc-detail { color: var(--text-dim); font-size: 0.85em; }
+
+.bizlogic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.bizlogic-card { padding: 16px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 12px; }
+.bizlogic-card h4 { margin-bottom: 12px; color: var(--accent-cyan); }
+.bizlogic-payloads { display: flex; flex-direction: column; gap: 4px; }
+
+.apifuzz-payload-list { display: flex; flex-direction: column; gap: 4px; }
+.apifuzz-curl { display: flex; flex-direction: column; gap: 4px; }
+.apifuzz-curl code { font-size: 0.8em; padding: 6px 8px; background: rgba(0,0,0,0.3); border-radius: 4px; word-break: break-all; }
+
+.scanprogress-bar-container { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+.scanprogress-bar { height: 100%; background: linear-gradient(90deg, var(--accent-cyan), var(--primary)); border-radius: 4px; transition: width 0.3s; }
+.scanprogress-stats { display: flex; gap: 16px; margin-top: 8px; font-size: 0.9em; }
+.scanprogress-log { background: rgba(0,0,0,0.2); border-radius: 8px; padding: 8px; font-family: monospace; font-size: 0.85em; }
+.scanprogress-entry { display: flex; gap: 8px; padding: 2px 0; }
+
+.search-filters { display: flex; gap: 16px; flex-wrap: wrap; }
+.search-filters label { display: flex; align-items: center; gap: 4px; font-size: 0.9em; }
+.search-results { max-height: 400px; overflow-y: auto; }
+.search-result-item { width: 100%; }
+.search-result-type { min-width: 80px; }
+.search-result-value { flex: 1; word-break: break-all; font-size: 0.85em; }
+
+.scancompare-stats { display: flex; gap: 24px; margin-bottom: 16px; }
+.scancompare-new .badge { background: rgba(25,135,84,0.2); color: #198754; }
+.scancompare-removed .badge { background: rgba(220,53,69,0.2); color: #dc3545; }
+.scancompare-secret .badge { background: rgba(255,193,7,0.2); color: #ffc107; }
+
+.cvss-form .cvss-metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.cvss-score-display { display: flex; align-items: center; gap: 16px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; }
+.cvss-score-number { font-size: 3rem; font-weight: 700; }
+.cvss-vector { margin-top: 12px; }
+.cvss-vector code { font-size: 0.85em; padding: 8px 12px; background: rgba(0,0,0,0.3); border-radius: 6px; display: inline-block; word-break: break-all; }
+
+.moreexports-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.export-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 12px; color: var(--text); cursor: pointer; transition: all 0.2s; }
+.export-btn:hover { background: rgba(255,255,255,0.08); border-color: var(--primary); }
+.export-btn i { font-size: 1.5rem; color: var(--accent-cyan); }
+
+.screenshot-service { padding: 16px; margin-bottom: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 12px; }
+.screenshot-service h5 { margin-bottom: 8px; }
+
+.plugin-saved { margin-top: 12px; }
+.plugin-item { display: flex; align-items: center; gap: 8px; padding: 8px; border-bottom: 1px solid var(--border); }
+
+.customcheck-item { display: flex; align-items: center; gap: 8px; padding: 8px; border-bottom: 1px solid var(--border); }
+.customcheck-name { font-weight: 600; min-width: 120px; }
+.customcheck-regex { flex: 1; font-size: 0.85em; word-break: break-all; }
+
+.vulndb-item { flex-direction: column; align-items: flex-start; }
+.vulndb-header { display: flex; align-items: center; gap: 8px; width: 100%; }
+.vulndb-id { font-family: monospace; font-weight: 600; }
+.vulndb-name { flex: 1; }
+.vulndb-desc { font-size: 0.85em; color: var(--text-dim); width: 100%; }
+.vulndb-vectors { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+.githubdork-item { width: 100%; }
+.githubdork-name { min-width: 100px; font-weight: 600; }
+.githubdork-query { flex: 1; font-size: 0.85em; word-break: break-all; }
+
+.emailharvest-item { width: auto; }
+.emailharvest-item code { flex: 1; }
+
+.pii-item { width: 100%; }
+.pii-item i { color: var(--accent-cyan); min-width: 20px; }
+
+.wayback-stats { display: flex; gap: 16px; margin: 12px 0; }
+.wayback-item { width: 100%; }
+
+.error-boundary-toast {
+  position: fixed; bottom: 80px; left: 24px; z-index: 99999;
+  background: rgba(220,53,69,0.95); color: #fff; padding: 12px 16px;
+  border-radius: 8px; max-width: 400px; font-size: 0.9em;
+  display: flex; align-items: flex-start; gap: 8px;
+  backdrop-filter: blur(8px);
+}
+.error-boundary-toast code { font-size: 0.8em; word-break: break-all; }
+.error-boundary-toast .btn { margin-left: auto; background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 2px 8px; }
+
+/* Tab overflow scroll */
+#toolkit-tabs {
+  display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px;
+  padding: 8px 0; scrollbar-width: thin;
+}
+#toolkit-tabs::-webkit-scrollbar { height: 4px; }
+#toolkit-tabs::-webkit-scrollbar-track { background: transparent; }
+#toolkit-tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }

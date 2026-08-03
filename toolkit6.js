@@ -30,14 +30,13 @@
      P3-13: ERROR BOUNDARY
      ============================================================ */
   function initErrorBoundary() {
-    window.onerror = function (msg, url, line, col, error) {
+    window.addEventListener("error", function (e) {
       const errEl = document.createElement("div");
       errEl.className = "error-boundary-toast";
-      errEl.innerHTML = `<strong>Runtime Error</strong><br><code>${esc(msg)} (${url}:${line}:${col})</code><button onclick="this.parentElement.remove()" class="btn btn-sm">&times;</button>`;
+      errEl.innerHTML = `<strong>Runtime Error</strong><br><code>${esc(e.message || "Unknown")} (${e.filename || ""}:${e.lineno || ""}:${e.colno || ""})</code><button onclick="this.parentElement.remove()" class="btn btn-sm">&times;</button>`;
       document.body.appendChild(errEl);
       setTimeout(() => errEl.remove(), 10000);
-      return false;
-    };
+    });
 
     window.addEventListener("unhandledrejection", function (e) {
       const errEl = document.createElement("div");
