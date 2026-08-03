@@ -258,6 +258,14 @@
             <i class="fas fa-globe input-icon"></i>
             <input id="urlInput" type="url" placeholder="https://example.com" autofocus required />
           </div>
+          <div id="cookieImportRow" style="display:none; margin-top:8px;">
+            <div class="input-wrapper glass-input" style="display:flex; align-items:center; gap:8px;">
+              <i class="fas fa-cookie-bite input-icon"></i>
+              <input id="cookieImportInput" type="text" placeholder="Paste cookies here: cf_clearance=abc; __cf_bm=xyz" style="flex:1; border:none; background:transparent;" />
+              <button id="cookieClearBtn" class="btn btn-sm" title="Clear cookies" style="padding:4px 8px; font-size:0.75em;"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="field-status" id="cookieImportStatus">Paste cookies from your browser (F12 → Application → Cookies) to bypass Cloudflare.</div>
+          </div>
           <div class="button-group">
             <button id="scanBtn" class="btn btn-secondary" title="Scan only this page and its JS">
               <i class="fas fa-search"></i>
@@ -274,6 +282,10 @@
             <button id="waybackFetchBtn" class="btn btn-secondary" title="Fetch historical URLs from the Wayback Machine">
               <i class="fas fa-clock-rotate-left"></i>
               <span data-i18n="scanner_wayback">Wayback URLs</span>
+            </button>
+            <button id="cookieToggleBtn" class="btn btn-secondary" title="Import cookies to bypass Cloudflare / bot protection">
+              <i class="fas fa-cookie-bite"></i>
+              <span>Cookies</span>
             </button>
           </div>
         </div>

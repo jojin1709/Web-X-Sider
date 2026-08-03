@@ -803,6 +803,11 @@ function getAuthHeaders() {
       if (key && value) headers[key] = value;
     }
   });
+  // Merge imported cookies from the cookie import UI
+  if (window._importedCookies) {
+    const existing = headers["Cookie"] || "";
+    headers["Cookie"] = existing ? `${existing}; ${window._importedCookies}` : window._importedCookies;
+  }
   return headers;
 }
 
@@ -1799,6 +1804,47 @@ stopScanBtn.addEventListener("click", () => {
 
 scanBtn.addEventListener("click", () => startScan(0));
 document.getElementById("fullScanBtn").addEventListener("click", () => startScan(1));
+
+// Cookie Import — bypass Cloudflare / bot protection with browser cookies
+window._importedCookies = "";
+const cookieToggleBtn = document.getElementById("cookieToggleBtn");
+const cookieImportRow = document.getElementById("cookieImportRow");
+const cookieImportInput = document.getElementById("cookieImportInput");
+const cookieImportStatus = document.getElementById("cookieImportStatus");
+const cookieClearBtn = document.getElementById("cookieClearBtn");
+
+cookieToggleBtn?.addEventListener("click", () => {
+  const visible = cookieImportRow.style.display !== "none";
+  cookieImportRow.style.display = visible ? "none" : "block";
+  if (!visible) cookieImportInput.focus();
+});
+
+cookieImportInput?.addEventListener("input", () => {
+  const raw = cookieImportInput.value.trim();
+  if (!raw) {
+    window._importedCookies = "";
+    cookieImportStatus.innerText = "Paste cookies from your browser (F12 → Application → Cookies) to bypass Cloudflare.";
+    cookieImportStatus.style.color = "";
+    return;
+  }
+  // Convert "name=value; name2=value2" to Cookie header format
+  const cookieHeader = raw.startsWith("Cookie:") ? raw.slice(7).trim() : raw;
+  window._importedCookies = cookieHeader;
+  const count = cookieHeader.split(";").filter(c => c.trim()).length;
+  cookieImportStatus.innerText = `${count} cookie(s) loaded — will be sent with all scan requests.`;
+  cookieImportStatus.style.color = "var(--success)";
+});
+
+cookieClearBtn?.addEventListener("click", () => {
+  cookieImportInput.value = "";
+  window._importedCookies = "";
+  cookieImportStatus.innerText = "Cookies cleared.";
+  cookieImportStatus.style.color = "var(--warning)";
+  setTimeout(() => {
+    cookieImportStatus.innerText = "Paste cookies from your browser (F12 → Application → Cookies) to bypass Cloudflare.";
+    cookieImportStatus.style.color = "";
+  }, 2000);
+});
 
 async function recursiveScan(url, maxDepth, currentDepth = 0, targetHost = null) {
   if (state.isCrawlerStopped) return;
