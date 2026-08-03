@@ -1754,14 +1754,18 @@ const startScan = async (maxDepth) => {
       await recursiveScan(importedUrl, 0, 0, startHost);
     }
 
-    if (!state.isCrawlerStopped && state.fetchFailures.length && state.allData.length === 0) {
+    const hasResults = state.allData.length > 0 || state.hostChecks.length > 0;
+    if (!state.isCrawlerStopped && state.fetchFailures.length && !hasResults) {
       state.scanDiagnostic = buildScanDiagnostic(siteUrl);
       status.innerText = state.scanDiagnostic.statusText;
     } else if (!state.isCrawlerStopped) {
       const skipped = state.fetchFailures.length;
-      if (state.allData.length) {
+      if (hasResults) {
+        const parts = [];
+        if (state.allData.length) parts.push(`${state.allData.length} items`);
+        if (state.hostChecks.length) parts.push(`${state.hostChecks.length} hosts`);
         status.innerText = skipped
-          ? `Scan complete! ${state.allData.length} items found (${skipped} pages skipped).`
+          ? `Scan complete! Found ${parts.join(", ")} (${skipped} pages skipped by protection).`
           : "Scan complete!";
       } else {
         status.innerText = "Scan complete, but no endpoints, secrets, parameters, or files were found.";
