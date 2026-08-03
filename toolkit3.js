@@ -38,7 +38,7 @@
   /* ============ 1. WAF DETECTION & FINGERPRINTING ============ */
   const WAF_SIGNATURES = [
     { name: "Cloudflare", headers: ["cf-ray", "cf-cache-status"], body: ["cloudflare", "cf_chl"], status: [403, 503] },
-    { name: "Akamai", headers: ["x-akamai-transformed"], body: ["akamai", "reference="#"], status: [403] },
+    { name: "Akamai", headers: ["x-akamai-transformed"], body: ["akamai", "reference=\"#\""], status: [403] },
     { name: "AWS WAF", headers: ["x-amzn-waf"], body: ["x-amzn-waf"], status: [403] },
     { name: "Imperva/Incapsula", headers: ["x-iinfo", "incap-ses"], body: ["imperva", "incapsula"], status: [403] },
     { name: "Sucuri", headers: ["x-sucuri-id"], body: ["sucuri", "cloudproxy"], status: [403] },
@@ -410,17 +410,17 @@
       const csp = headers["content-security-policy"] || "";
       const frameAncestors = csp.match(/frame-ancestors[^;]*/i)?.[0] || "";
 
-      const protected = xfo || frameAncestors;
+      const isProtected = xfo || frameAncestors;
       out.innerHTML = `
         <div class="recon-list-item">
-          ${protected ? badge("Protected against clickjacking", "good") : badge("VULNERABLE to clickjacking!", "bad")}
+          ${isProtected ? badge("Protected against clickjacking", "good") : badge("VULNERABLE to clickjacking!", "bad")}
           <div style="margin-top:8px;">
             <strong>X-Frame-Options:</strong> ${xfo ? code(xfo) : badge("missing", "bad")}<br/>
             <strong>CSP frame-ancestors:</strong> ${frameAncestors ? code(frameAncestors) : badge("missing", "bad")}
           </div>
-          ${!protected ? `<div style="margin-top:8px;"><strong>PoC:</strong> ${code(`<iframe src="${url}" style="width:100%;height:500px;border:none;"></iframe>`)}</div>` : ""}
+          ${!isProtected ? `<div style="margin-top:8px;"><strong>PoC:</strong> ${code(`<iframe src="${url}" style="width:100%;height:500px;border:none;"></iframe>`)}</div>` : ""}
         </div>`;
-      toast(protected ? "Protected" : "Vulnerable to clickjacking!", protected ? "success" : "warn");
+      toast(isProtected ? "Protected" : "Vulnerable to clickjacking!", isProtected ? "success" : "warn");
     } catch (e) {
       out.innerHTML = `<div class="recon-list-item">${badge("error", "bad")} ${esc(e.message)}</div>`;
     }
