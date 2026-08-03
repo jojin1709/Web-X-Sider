@@ -1280,7 +1280,7 @@
     return buildPanel("bizlogic", `
       <div class="bizlogic-section">
         <h3><i class="fas fa-brain"></i> Business Logic Helpers</h3>
-        <p class="tool-desc">Test for price manipulation, privilege escalation, race conditions, and multi-step auth bypass</p>
+        <p class="tool-desc">Comprehensive business logic testing: price manipulation, privilege escalation, IDOR, race conditions, multi-step bypass, state manipulation, and more</p>
         <div class="bizlogic-grid">
           <div class="bizlogic-card">
             <h4><i class="fas fa-dollar-sign"></i> Price Manipulation</h4>
@@ -1288,64 +1288,363 @@
               <code>price=0</code>
               <code>price=-1</code>
               <code>price=0.01</code>
+              <code>price=99999999</code>
+              <code>price=NaN</code>
+              <code>price=undefined</code>
+              <code>price=null</code>
+              <code>price=""</code>
+              <code>price=0x0</code>
+              <code>price=0.0000001</code>
+              <code>price=-0.01</code>
+              <code>price=Infinity</code>
               <code>quantity=-1</code>
+              <code>quantity=0</code>
+              <code>quantity=999999</code>
+              <code>quantity=1.5</code>
+              <code>quantity=-999</code>
               <code>discount=100</code>
+              <code>discount=101</code>
+              <code>discount=-1</code>
+              <code>discount=0</code>
+              <code>discount=99999</code>
+              <code>discount=NaN</code>
               <code>coupon=ADMIN</code>
+              <code>coupon=TEST</code>
+              <code>coupon=FREE</code>
+              <code>coupon=NULL</code>
+              <code>coupon=""</code>
+              <code>coupon=AAAA</code>
               <code>total=0</code>
+              <code>total=-1</code>
+              <code>total=null</code>
               <code>amount=0</code>
+              <code>amount=-1</code>
+              <code>subtotal=0</code>
+              <code>tax=0</code>
+              <code>shipping=0</code>
+              <code>vat=0</code>
+              <code>surcharge=0</code>
+              <code>original_price=0</code>
+              <code>unit_price=0</code>
+              <code>sale_price=0</code>
+              <code>cost=0</code>
+              <code>currency=USD</code>
+              <code>currency=JPY</code>
+              <code>currency=BTC</code>
+              <code>currency=ETH</code>
             </div>
           </div>
           <div class="bizlogic-card">
             <h4><i class="fas fa-user-shield"></i> Privilege Escalation</h4>
             <div class="bizlogic-payloads">
               <code>role=admin</code>
+              <code>role=superadmin</code>
+              <code>role=root</code>
+              <code>role=owner</code>
+              <code>role=operator</code>
+              <code>role=moderator</code>
+              <code>role=editor</code>
               <code>admin=true</code>
+              <code>admin=1</code>
+              <code>admin=yes</code>
+              <code>isAdmin=true</code>
               <code>is_admin=1</code>
+              <code>isSuperAdmin=true</code>
+              <code>isRoot=true</code>
+              <code>isStaff=true</code>
               <code>user_type=superadmin</code>
+              <code>user_type= administrator</code>
+              <code>user_type=root</code>
+              <code>user_role=admin</code>
+              <code>account_type=business</code>
+              <code>account_type=enterprise</code>
               <code>permission=write</code>
+              <code>permission=delete</code>
+              <code>permission=full</code>
+              <code>permissions=["*"]</code>
+              <code>permissions=["admin","write"]</code>
               <code>access_level=999</code>
+              <code>access_level=0</code>
               <code>group=administrators</code>
+              <code>group=superusers</code>
+              <code>group=internal</code>
+              <code>org=admin</code>
+              <code>org=root</code>
+              <code>tenant_id=1</code>
+              <code>org_id=1</code>
+              <code>company=admin</code>
+              <code>department=IT</code>
+              <code>tier=enterprise</code>
+              <code>plan=unlimited</code>
+              <code>level=99</code>
+              <code>clearance=top_secret</code>
+              <code>staff=true</code>
+              <code>internal=true</code>
+              <code>debug=true</code>
+              <code>_debug=1</code>
+              <code>test=true</code>
             </div>
           </div>
           <div class="bizlogic-card">
             <h4><i class="fas fa-sort-numeric-up"></i> IDOR Testing</h4>
             <div class="bizlogic-payloads">
               <code>/user/1 → /user/2</code>
+              <code>/user/me → /user/admin</code>
+              <code>/user/self → /user/1</code>
+              <code>/profile/1 → /profile/2</code>
+              <code>/account/1 → /account/2</code>
               <code>/order/123 → /order/124</code>
-              <code>?id=me → ?id=admin</code>
-              <code>?user=other_user</code>
-              <code>?account_id=different</code>
+              <code>/order/123 → /order/0</code>
+              <code>/order/123 → /order/-1</code>
+              <code>/invoice/1 → /invoice/2</code>
+              <code>/doc/1 → /doc/2</code>
+              <code>/file/1 → /file/2</code>
               <code>/api/v1/users/{other_id}</code>
+              <code>?id=me → ?id=admin</code>
+              <code>?id=1 → ?id=0</code>
+              <code>?id=1 → ?id=-1</code>
+              <code>?user=other_user</code>
+              <code>?user=admin</code>
+              <code>?account_id=different</code>
+              <code>?owner=other</code>
+              <code>?uid=1 → ?uid=2</code>
+              <code>?uuid=fake-uuid</code>
+              <code>?ref=other_reference</code>
+              <code>?token=other_token</code>
+              <code>?session=other_session</code>
+              <code>/api/v1/admin/users</code>
+              <code>/internal/users</code>
+              <code>/debug/users</code>
             </div>
           </div>
           <div class="bizlogic-card">
             <h4><i class="fas fa-clock"></i> Race Condition</h4>
             <div class="bizlogic-payloads">
-              <code>Send 10 concurrent requests to /api/transfer</code>
+              <code>Send 10 concurrent POST to /api/transfer</code>
               <code>Double-submit form rapidly</code>
-              <code>Parallel coupon redemption</code>
-              <code>Concurrent account creation</code>
-              <code>Rapid password reset requests</code>
+              <code>Parallel coupon redemption (same code, 5x)</code>
+              <code>Concurrent account creation (same email)</code>
+              <code>Rapid password reset requests (10x)</code>
+              <code>Parallel wallet top-up (same amount)</code>
+              <code>Simultaneous like/upvote (same post)</code>
+              <code>Concurrent vote submission</code>
+              <code>Rapid-fire purchase (same item, low stock)</code>
+              <code>Parallel file upload (overwrite race)</code>
+              <code>Double-click submit on payment form</code>
+              <code>Concurrent balance check + withdrawal</code>
+              <code>Parallel ticket booking (same seat)</code>
+              <code>Rapid session creation (token reuse)</code>
+              <code>Concurrent promo code apply</code>
+              <code>Parallel referral code usage</code>
+              <code>Double-spend on limited coupon</code>
+              <code>Concurrent stock decrement</code>
+              <code>Rapid bid placement (auction)</code>
+              <code>Parallel leaderboard update</code>
             </div>
           </div>
           <div class="bizlogic-card">
             <h4><i class="fas fa-step-forward"></i> Multi-Step Bypass</h4>
             <div class="bizlogic-payloads">
               <code>Skip step 1, go to /step-2</code>
+              <code>Skip to /step-final directly</code>
               <code>Direct access to /confirm</code>
-              <code>Modify step parameter</code>
-              <code>Remove CSRF token</code>
+              <code>Direct access to /complete</code>
+              <code>Direct access to /success</code>
+              <code>Modify step=3 → step=1</code>
+              <code>Remove CSRF token from form</code>
+              <code>Reuse old CSRF token</code>
               <code>Reuse old verification code</code>
+              <code>Resend verification, use old code</code>
+              <code>Go back to step 1 after step 3</code>
+              <code>Change wizard_id to other session</code>
+              <code>Modify flow_id parameter</code>
+              <code>Remove all session cookies, POST to /confirm</code>
+              <code>Use expired magic link</code>
+              <code>Reuse password reset token</code>
+              <code>Skip email verification entirely</code>
+              <code>Direct POST to /api/register/complete</code>
+              <code>Modify checkout_step=payment → checkout_step=done</code>
+              <code>Remove 2FA requirement parameter</code>
             </div>
           </div>
           <div class="bizlogic-card">
             <h4><i class="fas fa-redo"></i> State Manipulation</h4>
             <div class="bizlogic-payloads">
               <code>status=pending → status=completed</code>
-              <code>order_status=processing</code>
+              <code>status=active → status=cancelled</code>
+              <code>status=draft → status=published</code>
+              <code>status=suspended → status=active</code>
+              <code>order_status=processing → order_status=shipped</code>
+              <code>order_status=refunded → order_status=completed</code>
               <code>payment_status=paid</code>
+              <code>payment_status=unpaid → payment_status=paid</code>
+              <code>payment_status=failed → payment_status=success</code>
               <code>verified=false → verified=true</code>
+              <code>email_verified=false → email_verified=true</code>
+              <code>phone_verified=false → phone_verified=true</code>
               <code>approved=pending → approved=true</code>
+              <code>approved=false → approved=true</code>
+              <code>active=false → active=true</code>
+              <code>deleted=false → deleted=true</code>
+              <code>locked=false → locked=true</code>
+              <code>blocked=false → blocked=true</code>
+              <code>is_featured=false → is_featured=true</code>
+              <code>is_pinned=false → is_pinned=true</code>
+              <code>is_vip=false → is_vip=true</code>
+            </div>
+          </div>
+          <div class="bizlogic-card">
+            <h4><i class="fas fa-calculator"></i> Integer Overflow / Underflow</h4>
+            <div class="bizlogic-payloads">
+              <code>quantity=2147483647</code>
+              <code>quantity=2147483648</code>
+              <code>quantity=-2147483648</code>
+              <code>quantity=-2147483649</code>
+              <code>amount=999999999999</code>
+              <code>id=0</code>
+              <code>id=-1</code>
+              <code>id=999999999999</code>
+              <code>page=-1</code>
+              <code>page=0</code>
+              <code>limit=-1</code>
+              <code>limit=0</code>
+              <code>limit=999999</code>
+              <code>offset=-1</code>
+              <code>count=999999999</code>
+              <code>size=0</code>
+              <code>size=-1</code>
+              <code>depth=999</code>
+              <code>timeout=0</code>
+              <code>timeout=-1</code>
+              <code>retry=-1</code>
+              <code>max_age=0</code>
+              <code>expires=0</code>
+              <code>ttl=-1</code>
+            </div>
+          </div>
+          <div class="bizlogic-card">
+            <h4><i class="fas fa-exchange-alt"></i> Negative Value Injection</h4>
+            <div class="bizlogic-payloads">
+              <code>amount=-1</code>
+              <code>balance=-1</code>
+              <code>credit=-1</code>
+              <code>debit=-1</code>
+              <code>points=-1</code>
+              <code>rewards=-1</code>
+              <code>credits=-1</code>
+              <code>tokens=-1</code>
+              <code>quantity=-1</code>
+              <code>items=-1</code>
+              <code>days=-1</code>
+              <code>hours=-1</code>
+              <code>discount=-50</code>
+              <code>refund_amount=-100</code>
+              <code>transfer_amount=-500</code>
+              <code>withdrawal=-1000</code>
+              <code>price=-0.01</code>
+              <code>total=-999</code>
+              <code>balance=0 → withdraw=100</code>
+              <code>stock=-1 (infinite items)</code>
+            </div>
+          </div>
+          <div class="bizlogic-card">
+            <h4><i class="fas fa-user-secret"></i> Authentication Bypass</h4>
+            <div class="bizlogic-payloads">
+              <code>Remove Authorization header</code>
+              <code>Authorization: Bearer null</code>
+              <code>Authorization: Bearer undefined</code>
+              <code>Authorization: Bearer ""</code>
+              <code>Authorization: Bearer admin</code>
+              <code>Cookie: session= (empty)</code>
+              <code>Cookie: token= (empty)</code>
+              <code>X-User-Id: 1</code>
+              <code>X-User-Id: admin</code>
+              <code>X-Forwarded-For: 127.0.0.1</code>
+              <code>X-Real-IP: 127.0.0.1</code>
+              <code>X-Original-URL: /admin</code>
+              <code>X-Rewrite-URL: /admin</code>
+              <code>X-Custom-IP-Authorization: 127.0.0.1</code>
+              <code>X-Remote-IP: 127.0.0.1</code>
+              <code>X-Client-IP: 127.0.0.1</code>
+              <code>X-Forwarded-Host: admin.internal</code>
+              <code>Host: localhost</code>
+              <code>Referer: /admin</code>
+              <code>Origin: http://localhost</code>
+            </div>
+          </div>
+          <div class="bizlogic-card">
+            <h4><i class="fas fa-at"></i> Email / Account Logic</h4>
+            <div class="bizlogic-payloads">
+              <code>Register with existing email</code>
+              <code>Register with admin@target.com</code>
+              <code>Register with +alias@target.com</code>
+              <code>Login with empty password</code>
+              <code>Reset password for admin@target.com</code>
+              <code>Change email to admin@target.com</code>
+              <code>Merge account with admin account</code>
+              <code>Username enumeration via timing</code>
+              <code>Brute-force 4-digit OTP</code>
+              <code>Reuse expired JWT</code>
+              <code>Refresh token after logout</code>
+              <code>Session fixation via URL parameter</code>
+              <code>Cookie without HttpOnly flag</code>
+              <code>Cookie without Secure flag</code>
+              <code>Cookie without SameSite</code>
+              <code>JWT with alg:none</code>
+              <code>JWT with expired exp</code>
+              <code>JWT with no signature</code>
+              <code>OAuth state parameter manipulation</code>
+              <code>OAuth redirect_uri to attacker domain</code>
+            </div>
+          </div>
+          <div class="bizlogic-card">
+            <h4><i class="fas fa-layer-group"></i> Mass Assignment</h4>
+            <div class="bizlogic-payloads">
+              <code>{"role":"admin"}</code>
+              <code>{"admin":true}</code>
+              <code>{"is_verified":true}</code>
+              <code>{"email_verified":true}</code>
+              <code>{"balance":999999}</code>
+              <code>{"credits":999999}</code>
+              <code>{"plan":"enterprise"}</code>
+              <code>{"subscription":"premium"}</code>
+              <code>{"discount_code":"FREE"}</code>
+              <code>{"referral_code":"SELF"}</code>
+              <code>{"id":1}</code>
+              <code>{"user_id":1}</code>
+              <code>{"created_at":"2020-01-01"}</code>
+              <code>{"last_login":"2099-01-01"}</code>
+              <code>{"login_count":0}</code>
+              <code>{"failed_attempts":0}</code>
+              <code>{"locked":false}</code>
+              <code>{"deleted":false}</code>
+              <code>{"internal":true}</code>
+              <code>{"staff":true}</code>
+              <code>{"override_fee":0}</code>
+              <code>{"tax_exempt":true}</code>
+              <code>{"shipping_cost":0}</code>
+              <code>{"_id":"admin"}</code>
+              <code>{"__proto__":{"isAdmin":true}}</code>
+            </div>
+          </div>
+          <div class="bizlogic-card">
+            <h4><i class="fas fa-redo-alt"></i> Replay / Reuse Attacks</h4>
+            <div class="bizlogic-payloads">
+              <code>Replay completed payment request</code>
+              <code>Reuse old session cookie after logout</code>
+              <code>Reuse expired password reset link</code>
+              <code>Replay email verification link</code>
+              <code>Reuse old CSRF token</code>
+              <code>Replay 2FA code after success</code>
+              <code>Replay sign-up request with same email</code>
+              <code>Replay file upload with virus content</code>
+              <code>Replay import CSV with modified data</code>
+              <code>Replay refund request</code>
+              <code>Replay loyalty point credit</code>
+              <code>Replay referral bonus</code>
+              <code>Replay invite acceptance</code>
+              <code>Replay subscription cancel → renew</code>
+              <code>Replay draft save with poisoned data</code>
             </div>
           </div>
         </div>
