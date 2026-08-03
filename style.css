@@ -3977,6 +3977,50 @@ details summary:hover {
   border: 1px solid #e2e8f0;
 }
 
+[data-theme="light"] .tk-panel input[type="text"],
+[data-theme="light"] .tk-panel input[type="url"],
+[data-theme="light"] .tk-panel input[type="email"],
+[data-theme="light"] .tk-panel input[type="number"],
+[data-theme="light"] .tk-panel input[type="search"],
+[data-theme="light"] .tk-panel input[type="password"],
+[data-theme="light"] .tk-panel textarea,
+[data-theme="light"] .tk-panel select {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .tk-panel code {
+  background: #f1f5f9 !important;
+  color: #4F46E5 !important;
+}
+
+[data-theme="light"] .tk-panel pre {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .tk-panel .btn-secondary {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .dash-stat-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .compliance-item {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .compliance-cat-header {
+  background: #f8fafc !important;
+}
+
 [data-theme="light"] textarea {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -4263,3 +4307,332 @@ details summary:hover {
 #toolkit-tabs::-webkit-scrollbar { height: 4px; }
 #toolkit-tabs::-webkit-scrollbar-track { background: transparent; }
 #toolkit-tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ============ DARK THEME FOR ALL TOOLKIT PANEL FORM ELEMENTS ============ */
+.tk-panel input[type="text"],
+.tk-panel input[type="url"],
+.tk-panel input[type="email"],
+.tk-panel input[type="number"],
+.tk-panel input[type="search"],
+.tk-panel input[type="password"],
+.tk-panel textarea,
+.tk-panel select {
+  background: rgba(15, 23, 42, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  color: var(--text-primary) !important;
+  padding: 10px 14px !important;
+  font-family: inherit !important;
+  font-size: 0.9rem !important;
+  outline: none !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.tk-panel input:focus,
+.tk-panel textarea:focus,
+.tk-panel select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+
+.tk-panel input::placeholder,
+.tk-panel textarea::placeholder {
+  color: var(--text-dim) !important;
+}
+
+.tk-panel select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  padding-right: 36px !important;
+  appearance: none !important;
+}
+
+.tk-panel select option {
+  background: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+}
+
+.tk-panel label {
+  color: var(--text-secondary) !important;
+  font-size: 0.85rem !important;
+  margin-bottom: 4px !important;
+  display: block !important;
+}
+
+.tk-panel h3 {
+  color: var(--text-primary) !important;
+  margin-bottom: 8px !important;
+}
+
+.tk-panel h4 {
+  color: var(--text-primary) !important;
+  margin: 16px 0 8px !important;
+}
+
+.tk-panel h5 {
+  color: var(--text-secondary) !important;
+  margin: 12px 0 6px !important;
+}
+
+.tk-panel p {
+  color: var(--text-secondary) !important;
+}
+
+.tk-panel code {
+  background: rgba(0, 0, 0, 0.3) !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  font-family: 'Fira Code', 'Cascadia Code', monospace !important;
+  font-size: 0.85em !important;
+  color: var(--accent-cyan) !important;
+}
+
+.tk-panel pre {
+  background: rgba(0, 0, 0, 0.4) !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  overflow-x: auto !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: var(--text-primary) !important;
+  font-size: 0.85em !important;
+  max-height: 300px !important;
+  overflow-y: auto !important;
+}
+
+.tk-panel .btn {
+  background: var(--primary) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  transition: all 0.2s !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.tk-panel .btn:hover {
+  background: var(--primary-dark) !important;
+  transform: translateY(-1px) !important;
+}
+
+.tk-panel .btn-secondary {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.tk-panel .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.tk-panel .btn-danger {
+  background: var(--danger) !important;
+}
+
+.tk-panel .btn-danger:hover {
+  background: var(--danger-light) !important;
+}
+
+.tk-panel .btn-sm {
+  padding: 4px 10px !important;
+  font-size: 0.8rem !important;
+}
+
+/* Badge styles in toolkit panels */
+.tk-panel .badge,
+.tk-panel .recon-badge {
+  display: inline-block !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+}
+
+.tk-panel .badge.critical,
+.tk-panel .recon-badge.bad { background: rgba(239, 68, 68, 0.2) !important; color: var(--danger) !important; }
+.tk-panel .badge.high,
+.tk-panel .recon-badge.warn { background: rgba(245, 158, 11, 0.2) !important; color: var(--warning) !important; }
+.tk-panel .badge.medium,
+.tk-panel .recon-badge.info { background: rgba(59, 130, 246, 0.2) !important; color: var(--accent-blue) !important; }
+.tk-panel .badge.low,
+.tk-panel .recon-badge.good { background: rgba(16, 185, 129, 0.2) !important; color: var(--success) !important; }
+
+/* Checkbox and radio styling */
+.tk-panel input[type="checkbox"],
+.tk-panel input[type="radio"] {
+  accent-color: var(--primary) !important;
+  width: auto !important;
+  margin-right: 6px !important;
+}
+
+/* Dashboard cards */
+.dash-stat-card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  text-align: center !important;
+  transition: all 0.2s !important;
+}
+
+.dash-stat-card:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.dash-stat-value {
+  font-size: 2rem !important;
+  font-weight: 700 !important;
+  color: var(--text-primary) !important;
+}
+
+.dash-stat-label {
+  font-size: 0.85rem !important;
+  color: var(--text-dim) !important;
+}
+
+.dash-empty {
+  color: var(--text-dim) !important;
+  text-align: center !important;
+  padding: 20px !important;
+  font-style: italic !important;
+}
+
+/* Compliance results */
+.compliance-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 10px 12px !important;
+  margin-bottom: 6px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.compliance-item.pass { border-left: 3px solid var(--success) !important; }
+.compliance-item.fail { border-left: 3px solid var(--danger) !important; }
+.compliance-item.info { border-left: 3px solid var(--text-dim) !important; }
+
+.compliance-id {
+  font-weight: 700 !important;
+  min-width: 40px !important;
+  color: var(--accent-cyan) !important;
+}
+
+.compliance-name { flex: 1 !important; }
+.compliance-score { font-weight: 700 !important; min-width: 40px !important; text-align: right !important; }
+.compliance-score.pass { color: var(--success) !important; }
+.compliance-score.warn { color: var(--warning) !important; }
+.compliance-score.fail { color: var(--danger) !important; }
+
+.compliance-category {
+  margin-bottom: 16px !important;
+}
+
+.compliance-cat-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 10px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-radius: 8px !important;
+  margin-bottom: 6px !important;
+}
+
+.compliance-checks-list { padding-left: 16px !important; }
+
+/* Loading text */
+.loading-text {
+  color: var(--text-dim) !important;
+  text-align: center !important;
+  padding: 20px !important;
+  animation: pulse 1.5s infinite !important;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Error text */
+.error {
+  color: var(--danger) !important;
+  padding: 12px !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+}
+
+/* Form layout helpers */
+.tk-panel .dnsbrute-form,
+.tk-panel .ssrf-form,
+.tk-panel .wafbypass-form,
+.tk-panel .corsdeep-form,
+.tk-panel .cspbypass-form,
+.tk-panel .dirbrute-form,
+.tk-panel .graphql-form,
+.tk-panel .grpc-form,
+.tk-panel .apifuzz-form,
+.tk-panel .cvss-form,
+.tk-panel .githubdork-form,
+.tk-panel .emailharvest-form,
+.tk-panel .phonedetect-form,
+.tk-panel .waybackdeep-form,
+.tk-panel .shodan-form,
+.tk-panel .schedule-form,
+.tk-panel .plugin-form,
+.tk-panel .customchecks-form,
+.tk-panel .corsdeep-form,
+.tk-panel .scancompare-select {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+/* Tool description */
+.tool-desc {
+  color: var(--text-dim) !important;
+  font-size: 0.9em !important;
+  margin-bottom: 16px !important;
+}
+
+/* Flex row helper */
+.tk-panel div[style*="margin-top:12px"],
+.tk-panel div[style*="margin-top:8px"] {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
+
+/* Scan progress bar */
+.scanprogress-bar-container {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* CVSS score display */
+.cvss-score-display {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Shodan pre */
+.shodan-results pre {
+  max-height: 400px !important;
+}
+
+/* Mobile nav menu toggle */
+.mobile-menu-btn[aria-expanded="true"] + .mobile-menu {
+  transform: translateX(0) !important;
+}
+
+/* Toolkit tab category grouping - add visual spacing */
+#toolkit-tabs .tab-btn {
+  white-space: nowrap !important;
+}
