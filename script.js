@@ -118,7 +118,7 @@ const waybackResults = document.getElementById("waybackResults");
 
 const allResults = [];
 const scannedJs = new Set(); // avoid duplicate scans across sources
-console.log("%c🕷️ Web X Sider V2.0 Initialized", "color: #0dcaf0; font-weight: bold; font-size: 1.2rem;");
+console.log("%c🕷️ Web X Sider V5.0 Initialized", "color: #0dcaf0; font-weight: bold; font-size: 1.2rem;");
 
 const sensitivePaths = [
   // 🌐 Standard .well-known files
@@ -2420,44 +2420,6 @@ function renderProberLine(path, status, fullUrl, length, note = "", body = "") {
   const line = document.createElement("div");
   line.className = "prober-line";
 
-  let statusClass = "status-error"; // Default Red
-  if (status === 200) statusClass = "status-200"; // Green
-  else if (status === 403) statusClass = "status-403"; // Orange
-  else if (status === 401) statusClass = "status-401"; // Dark Orange
-  else if (status === 404) statusClass = "status-404"; // Red (Specified)
-
-  const lengthDisplay = length !== undefined ? `<span class="prober-length" style="color:var(--text-dim); font-size:0.85em; font-family: monospace;">[${length}]</span>` : '';
-  const noteDisplay = note ? `<span class="prober-note" style="color:var(--text-dim); font-size:0.78em; margin-left: 8px;">${escapeHtml(note)}</span>` : "";
-
-  let openBtnHtml = "";
-  if (status === 200) {
-    openBtnHtml = `<a href="${escapeHtml(fullUrl)}" target="_blank" class="prober-open-btn-200" style="margin-left: 0;">OPEN🔗</a>`;
-  } else if (status === 403 || status === 401) {
-    openBtnHtml = `<a href="${escapeHtml(fullUrl)}" target="_blank" class="prober-open-btn-403" style="margin-left: 0;">OPEN🔗</a>`;
-  }
-  const viewerHtml = body && (status === 200 || status === 403 || status === 401)
-    ? `<details style="width:100%;margin-top:8px;"><summary style="cursor:pointer;color:var(--accent-cyan);font-size:0.85em;">Response body</summary><pre style="white-space:pre-wrap;max-height:260px;overflow:auto;background:rgba(0,0,0,0.35);padding:10px;border-radius:8px;margin-top:8px;">${escapeHtml(String(body).slice(0, 12000))}</pre></details>`
-    : "";
-
-  line.innerHTML = `
-    <span class="prober-path" style="flex: 1; word-break: break-all; padding-right: 15px;">${escapeHtml(path)}${noteDisplay}</span>
-    <div style="display: flex; align-items: center; justify-content: flex-end; flex-shrink: 0;">
-      <span class="prober-status ${statusClass}" style="width: 50px; text-align: center;">${status}</span>
-      <div style="width: 75px; text-align: center; margin-left: 5px;">${openBtnHtml}</div>
-      <div style="width: 75px; text-align: right; margin-left: 5px;">${lengthDisplay}</div>
-    </div>
-    ${viewerHtml}
-  `;
-
-  // Remove loading text if first result
-  if (proberResults.querySelector(".status")) proberResults.innerHTML = "";
-  proberResults.appendChild(line);
-}
-
-function renderProberLineV2(path, status, fullUrl, length, note = "", body = "") {
-  const line = document.createElement("div");
-  line.className = "prober-line";
-
   let statusClass = "status-error";
   if (status === 200) statusClass = "status-200";
   else if (status === 403) statusClass = "status-403";
@@ -2490,8 +2452,6 @@ function renderProberLineV2(path, status, fullUrl, length, note = "", body = "")
   if (proberResults.querySelector(".status")) proberResults.innerHTML = "";
   proberResults.appendChild(line);
 }
-
-renderProberLine = renderProberLineV2;
 
 // Bug Bounty Recon Suite
 const reconUrlInput = document.getElementById("reconUrlInput");

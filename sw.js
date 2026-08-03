@@ -8,6 +8,7 @@ const ASSETS = [
   "/toolkit2.js",
   "/toolkit3.js",
   "/toolkit4.js",
+  "/i18n.js",
   "/favicon.png"
 ];
 

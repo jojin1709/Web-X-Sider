@@ -7,7 +7,7 @@
 **Advanced JavaScript Crawler, Endpoint Discovery & Bug Bounty Toolkit**
 
 [![Version](https://img.shields.io/badge/version-5.0-blue.svg)](https://github.com/jojin1709/Web-X-Sider)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/jojin1709/Web-X-Sider?style=social)](https://github.com/jojin1709/Web-X-Sider)
 [![Issues](https://img.shields.io/github/issues/jojin1709/Web-X-Sider)](https://github.com/jojin1709/Web-X-Sider/issues)
 
@@ -24,7 +24,7 @@ The ultimate client-side reconnaissance tool for security researchers. Extract h
 - [What is Web X Sider?](#what-is-web-x-sider)
 - [Features](#features)
 - [Quick Start](#quick-start)
-- [56 Tools Overview](#56-tools-overview)
+- [56+ Tools Overview](#56-tools-overview)
 - [Architecture](#architecture)
 - [Proxy Setup](#proxy-setup)
 - [Keyboard Shortcuts](#keyboard-shortcuts)
@@ -48,7 +48,7 @@ In bug bounty hunting, reconnaissance is 80% of the work. Web X Sider automates 
 - **Security Testing** — SQL injection, XSS, command injection, and more
 - **WAF Detection** — Identify which protection is in place before testing
 
-All **56 tools** run instantly in your browser with zero external dependencies.
+All **76 tools** run instantly in your browser with zero external dependencies.
 
 ---
 
@@ -56,21 +56,24 @@ All **56 tools** run instantly in your browser with zero external dependencies.
 
 | Category | Tools | Description |
 |----------|-------|-------------|
-| **Core Scanner** | 9 | JS crawling, endpoint discovery, secret detection, file discovery |
+| **Core Scanner** | 20 | JS crawling, endpoint discovery, secret detection, 17 recon sub-checks |
 | **Smart Prober** | 1 | 700+ sensitive paths across 44 categories |
-| **Recon Suite** | 1 | CORS, CSP, headers, tech fingerprint, JWT analysis |
-| **Advanced Toolkit** | 8 | Race testing, GraphQL, OAuth/PKCE, smuggling, prototype pollution |
-| **Security Testing** | 25 | WAF detection, SQLi, XSS, CMDi, traversal, port scanning |
-| **Productivity** | 14 | Dashboard, reports, history, targets, i18n, themes |
+| **Toolkit v1** | 10 | JS Diff Monitor, JWT Lab, Subdomain Takeover, CVE Map, Batch Scan, IDOR, Auth Matrix, Webhooks, Snapshots, PDF Export |
+| **Toolkit v2** | 8 | Race Condition, GraphQL Explorer, OAuth/PKCE, Request Smuggling, Prototype Pollution, Cache Poisoning, Bucket Enumeration, Nuclei Templates |
+| **Toolkit v3** | 25 | WAF Detection, Subdomain Enum, Open Redirect, Rate Limiting, Port Scan, Backup Finder, HTTP Methods, Clickjacking, Headers, SQLi, XSS, CMDi, Traversal, WebSocket, API Version, JWT Enhanced, OAuth, DNS Security, Email Security, Cloud Storage, Container, CI/CD, Mobile, Collaboration |
+| **Toolkit v4** | 13 | Dashboard, Reports, History, Targets, Shortcuts, Wordlist Manager, Scan Profiles, Alerts, OWASP/PCI/NIST Compliance, API Integration, i18n, Themes, Accessibility |
 
 ### Key Capabilities
 
 - **100% Client-Side** — No data leaves your browser
-- **56 Integrated Tools** — Complete bug bounty toolkit
+- **76 Integrated Tools** — Complete bug bounty toolkit
 - **12 Languages** — Full UI translation support
 - **Dark/Light Themes** — Customize your workspace
 - **Offline Support** — Works without internet (Service Worker)
-- **Export Multiple Formats** — JSON, CSV, HTML, PDF, Nuclei YAML
+- **Export Multiple Formats** — JSON, CSV, HTML, PDF, Nuclei YAML, Burp XML, ffuf, sqlmap, HAR
+- **Compliance Checks** — OWASP Top 10, PCI DSS, NIST framework assessments
+- **Wordlist Management** — Upload, save, and manage custom wordlists
+- **API Integration** — Webhook alerts, external tool export, file import
 
 ---
 
@@ -80,21 +83,32 @@ Just visit **[web-x-sider.mmkoji856.workers.dev](https://web-x-sider.mmkoji856.w
 
 ---
 
-## 56 Tools Overview
+## 76 Tools Overview
 
-### Core Scanner (9 Tools)
+### Core Scanner (20 Tools)
 
 | Tool | Description |
 |------|-------------|
-| JS Diff Monitor | Watch JS/page URLs for changes |
-| JWT Lab | Decode, brute-force, forge tokens |
-| Subdomain Takeover | 65-service fingerprint detection |
-| CVE Correlator | Map tech against 28 high-signal CVEs |
-| Batch Scanner | 50+ subdomains at once |
-| IDOR Range Tester | `{id}` style fuzzing |
-| Auth Matrix | Multi-role authorization testing |
-| Webhook Alerts | Discord/Slack notifications |
-| Visual Snapshot | WordPress mshots screenshots |
+| JS Crawler | Recursive JavaScript file analysis |
+| Endpoint Discovery | Extract hidden API routes from HTML/JS |
+| Secret Detection | 18+ patterns (AWS, Stripe, GitHub, JWT, etc.) |
+| File Discovery | Config, backup, log files with line numbers |
+| Parameter Extraction | Form inputs, query params, hidden fields |
+| Security Header Analysis | CSP, HSTS, X-Frame-Options deep-dive |
+| CORS Testing | Origin reflection, null origin, wildcard checks |
+| Tech Fingerprint | 14+ frameworks/services detection |
+| Robots & Sitemap | Discovered paths and rules |
+| OpenAPI Parser | Swagger/OpenAPI spec discovery |
+| Risky Parameter Detection | IDOR and injection candidates |
+| Reflected Parameter Detector | XSS precursor identification |
+| Interesting Response Signals | Debug info, error pages, verbose output |
+| JWT Decoder | Token analysis and validation |
+| Client Storage Analysis | localStorage, sessionStorage, cookies |
+| Cloud Config Detection | S3, GCP, Azure bucket signals |
+| GraphQL Endpoint Discovery | Schema introspection |
+| Source Map Discovery | Hidden source maps |
+| Auth Surface Mapping | Login/register/admin endpoints |
+| Endpoint Live Check | Verify discovered endpoints |
 
 ### Security Testing (25 Tools)
 
@@ -126,24 +140,23 @@ Just visit **[web-x-sider.mmkoji856.workers.dev](https://web-x-sider.mmkoji856.w
 | Mobile App Analysis | Deep links, manifests |
 | Real-time Collaboration | Export/import sessions |
 
-### Productivity Tools (14 Tools)
+### Productivity Tools (13 Tools)
 
 | Tool | Description |
 |------|-------------|
-| Unified Dashboard | Consolidated view of all findings |
-| Enhanced Reports | HTML, Executive Summary, PDF |
+| Unified Dashboard | Consolidated view of all findings with real-time stats |
+| Enhanced Reports | HTML, Executive Summary, PDF export |
 | Scan History | Save and compare scans over time |
 | Target Management | Save targets with notes, priority |
 | Keyboard Shortcuts | Ctrl+1-5, Ctrl+F, Ctrl+E |
-| Offline Support | Service Worker caching |
-| Custom Wordlists | Upload and manage wordlists |
+| Custom Wordlist Manager | Upload, save, and manage custom wordlists with presets |
 | Scan Profiles | Stealth/Normal/Aggressive presets |
 | Email/Webhook Alerts | Discord/Slack notifications |
-| Compliance Checks | OWASP Top 10 assessment |
-| API Integration | REST API for external tools |
+| Compliance Checks | OWASP Top 10, PCI DSS, NIST framework assessments with detailed scoring |
+| API Integration | Webhook config, Burp/Nuclei/ffuf/sqlmap/HAR/JSON export, file import |
 | Multi-language (i18n) | 12 languages supported |
 | Theme Toggle | Dark/Light/Auto themes |
-| Accessibility | High contrast, large text |
+| Accessibility | High contrast, large text, reduce motion |
 
 ---
 
@@ -223,7 +236,7 @@ Contributions are welcome! Here's how:
 
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 — see the [LICENSE](LICENSE) file for details.
 
 ---
 
