@@ -107,6 +107,7 @@
   }
 
   window._updateScanProgress = updateScanProgress;
+  window._resetScanProgress = () => { scanStartTime = 0; scanTotal = 0; scanDone = 0; };
 
   /* ============================================================
      P3-15: SEARCHABLE RESULTS
@@ -976,14 +977,35 @@
     resultsEl.innerHTML = '<p class="loading-text">Fetching Wayback data...</p>';
 
     try {
-      const resp = await fetch(`https://web.archive.org/cdx/search/cdx?url=${domain}/*&output=json&limit=500&fl=timestamp,original,mimetype,statuscode&collapse=urlkey`);
-      const data = await resp.json();
-      const headers = data[0];
-      const rows = data.slice(1).map(r => {
-        const obj = {};
-        headers.forEach((h, i) => obj[h] = r[i]);
-        return obj;
-      });
+      const apiUrl = `https://web.archive.org/cdx/search/cdx?url=${domain}/*&output=json&limit=500&fl=timestamp,original,mimetype,statuscode&collapse=urlkey`;
+      let rows = [];
+
+      // Try JSONP first (CORS-safe)
+      if (typeof window._fetchWaybackJsonp === "function") {
+        try {
+          const rawData = await window._fetchWaybackJsonp(apiUrl, 20000);
+          if (Array.isArray(rawData) && rawData.length > 1) {
+            const headers = rawData[0];
+            rows = rawData.slice(1).map(r => {
+              const obj = {};
+              headers.forEach((h, i) => obj[h] = r[i]);
+              return obj;
+            });
+          }
+        } catch (jsonpErr) { /* fall through to fetch */ }
+      }
+
+      // Fallback: direct fetch (may fail due to CORS)
+      if (!rows.length) {
+        const resp = await fetch(apiUrl);
+        const data = await resp.json();
+        const headers = data[0];
+        rows = data.slice(1).map(r => {
+          const obj = {};
+          headers.forEach((h, i) => obj[h] = r[i]);
+          return obj;
+        });
+      }
 
       const jsFiles = rows.filter(r => r.mimetype?.includes("javascript"));
       const sensitivePaths = rows.filter(r => /\.(env|bak|sql|json|xml|config|key|pem)$/i.test(r.original));
@@ -1019,12 +1041,12 @@
   function shodanPanelHTML() {
     return buildPanel("shodan", `
       <div class="shodan-section">
-        <h3><i class="fas fa-satellite-dish"></i> Shodan / Censys Lookup</h3>
-        <p class="tool-desc">Look up host information using public Shodan API</p>
+        <h3><i class="fas fa-satellite-dish"></i> Shodan Lookup</h3>
+        <p class="tool-desc">Look up host info. Enter an IP (e.g. 8.8.8.8) or domain (e.g. example.com). Free InternetDB lookup is always available; API key enables richer results.</p>
         <div class="shodan-form">
           <label>IP or Domain:</label>
-          <input type="text" id="shodanTarget" placeholder="1.2.3.4 or example.com" style="width:300px;" />
-          <label>Shodan API Key (optional):</label>
+          <input type="text" id="shodanTarget" placeholder="8.8.8.8 or example.com" style="width:300px;" />
+          <label>Shodan API Key (optional, enables host lookup):</label>
           <input type="text" id="shodanApiKey" placeholder="Your API key" style="width:300px;" />
           <div style="margin-top:8px;">
             <button id="shodanLookupBtn" class="btn btn-primary"><i class="fas fa-search"></i><span>Lookup</span></button>
@@ -1035,26 +1057,88 @@
     `);
   }
 
+  const IP_RE = /^\d{1,3}(\.\d{1,3}){3}$/;
+
+  async function resolveToIp(domain) {
+    try {
+      const resp = await fetch(`https://dns.google/resolve?name=${domain}&type=A`);
+      const data = await resp.json();
+      const answer = data.Answer?.find(a => a.type === 1);
+      return answer ? answer.data : null;
+    } catch { return null; }
+  }
+
   async function shodanLookup() {
     const target = $("shodanTarget")?.value?.trim();
     if (!target) { toast("Enter a target", "error"); return; }
 
-    const apiKey = $("shodanApiKey")?.value?.trim() || "";
-    const url = apiKey
-      ? `https://api.shodan.io/shodan/host/${encodeURIComponent(target)}?key=${apiKey}`
-      : `https://internetdb.shodan.io/${target}`;
+    const resultsEl = $("shodanResults");
+    resultsEl.innerHTML = '<p class="loading-text">Looking up...</p>';
 
-    try {
-      const resp = await fetch(url);
-      const data = await resp.json();
-
-      $("shodanResults").innerHTML = `
-        <h4>Shodan Results for ${esc(target)}</h4>
-        <pre>${esc(JSON.stringify(data, null, 2))}</pre>
-      `;
-    } catch (e) {
-      toast(`Error: ${e.message}`, "error");
+    let ip = target;
+    if (!IP_RE.test(target)) {
+      ip = await resolveToIp(target);
+      if (!ip) {
+        resultsEl.innerHTML = `<p class="error">Could not resolve "${esc(target)}" to an IP address.</p>`;
+        return;
+      }
     }
+
+    const apiKey = $("shodanApiKey")?.value?.trim() || "";
+    let html = `<h4>Shodan Results for ${esc(target)}</h4>`;
+
+    // 1) InternetDB (free, CORS-safe, no key needed)
+    try {
+      const idbResp = await fetch(`https://internetdb.shodan.io/${ip}`);
+      if (idbResp.ok) {
+        const idb = await idbResp.json();
+        const ports = (idb.ports || []).join(", ") || "none";
+        const vulns = (idb.vulns || []).join(", ") || "none";
+        const hostnames = (idb.hostnames || []).join(", ") || "none";
+        html += `
+          <div style="margin-bottom:16px;">
+            <h5>InternetDB (Free)</h5>
+            <p><strong>IP:</strong> ${esc(ip)}</p>
+            <p><strong>Hostnames:</strong> ${esc(hostnames)}</p>
+            <p><strong>Open Ports:</strong> ${esc(ports)}</p>
+            <p><strong>CPE:</strong> ${(idb.cpes || []).join(", ") || "none"}</p>
+            <p><strong>Vulns:</strong> ${esc(vulns)}</p>
+          </div>
+        `;
+      }
+    } catch (e) { /* silent */ }
+
+    // 2) Full host lookup via API (requires paid membership + key)
+    if (apiKey) {
+      try {
+        const apiResp = await fetch(`https://api.shodan.io/shodan/host/${ip}?key=${apiKey}`);
+        const apiData = await apiResp.json();
+        if (apiData.error) {
+          html += `<div><h5>REST API</h5><p class="warning">${esc(apiData.error)}</p></div>`;
+        } else {
+          const services = (apiData.data || []).map(s =>
+            `Port ${s.port}/${s.transport}: ${s.product || s.name || "unknown"} ${s.version || ""}`
+          ).join("\n") || "none";
+          html += `
+            <div>
+              <h5>REST API (Paid)</h5>
+              <p><strong>OS:</strong> ${esc(apiData.os || "unknown")}</p>
+              <p><strong>ISP:</strong> ${esc(apiData.isp || "unknown")}</p>
+              <p><strong>Organization:</strong> ${esc(apiData.org || "unknown")}</p>
+              <p><strong>Country:</strong> ${esc(apiData.country_name || "unknown")}</p>
+              <p><strong>Services:</strong></p>
+              <pre>${esc(services)}</pre>
+            </div>
+          `;
+        }
+      } catch (e) {
+        html += `<div><h5>REST API</h5><p class="warning">API request failed: ${esc(e.message)}</p></div>`;
+      }
+    } else {
+      html += `<p style="color:var(--text-dim);font-size:0.85em;">Add a Shodan API key for full host details (OS, ISP, services, vulns). Free InternetDB data shown above.</p>`;
+    }
+
+    resultsEl.innerHTML = html;
   }
 
   /* ============================================================

@@ -1,4 +1,4 @@
-const CACHE_NAME = "web-x-sider-v6";
+const CACHE_NAME = "web-x-sider-v7";
 const ASSETS = [
   "/",
   "/index.html",

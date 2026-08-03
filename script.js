@@ -1647,11 +1647,17 @@ async function liveCheckImportedHosts(baseUrl) {
   }
 }
 
-const setProgress = (percent) => {
+const setProgress = (percent, url, status) => {
   const p = Math.round(percent);
   document.getElementById("progress-bar").style.width = `${p}%`;
   const textEl = document.getElementById("progress-percent");
   if (textEl) textEl.innerText = `${p}%`;
+  // Sync with toolkit6 scan progress panel
+  if (typeof window._updateScanProgress === "function") {
+    const done = state.scannedUrls ? state.scannedUrls.size : state.scanned;
+    const total = state.totalToScan || 1;
+    window._updateScanProgress(done, total, url || "", status || null);
+  }
 };
 
 const startScan = async (maxDepth) => {
@@ -1667,6 +1673,7 @@ const startScan = async (maxDepth) => {
 
   state.scanned = 0;
   state.totalDiscovered = 0;
+  if (typeof window._resetScanProgress === "function") window._resetScanProgress();
   state.totalToScan = 1;
   state.endpoints.clear();
   state.secrets.clear();
@@ -1782,7 +1789,7 @@ async function recursiveScan(url, maxDepth, currentDepth = 0, targetHost = null)
 
     status.innerText = `Scanning: ${normUrl}`;
     const estimatedTotal = Math.max(state.totalDiscovered, state.scanned + 1, state.totalToScan || 1);
-    setProgress(Math.min(94, (state.scanned / estimatedTotal) * 100));
+    setProgress(Math.min(94, (state.scanned / estimatedTotal) * 100), normUrl);
 
     await delay(window._CRAWLER_DELAY !== undefined ? window._CRAWLER_DELAY : CRAWLER_REQUEST_DELAY_MS);
     const res = await fetchTarget(normUrl);
@@ -1835,7 +1842,7 @@ async function recursiveScan(url, maxDepth, currentDepth = 0, targetHost = null)
     const webpackChunks = extractWebpackChunks(content, normUrl);
     state.totalDiscovered += links.length + scripts.length + webpackChunks.length;
     state.totalToScan += links.length + scripts.length + webpackChunks.length;
-    setProgress(Math.min(94, (state.scannedUrls.size / Math.max(state.totalToScan, 1)) * 100));
+    setProgress(Math.min(94, (state.scannedUrls.size / Math.max(state.totalToScan, 1)) * 100), normUrl);
 
     for (const script of [...new Set([...scripts, ...webpackChunks])]) {
       if (state.isCrawlerStopped) break;
@@ -3894,6 +3901,7 @@ function fetchWaybackJsonp(apiUrl, timeoutMs = 15000) {
     document.head.appendChild(script);
   });
 }
+window._fetchWaybackJsonp = fetchWaybackJsonp;
 
 async function fetchWaybackRows(apiUrls) {
   const attempts = [
