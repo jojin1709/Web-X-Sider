@@ -1002,10 +1002,35 @@ const isCloudflareChallengePage = (text) => (
   /cf_chl|challenge-platform|enable javascript and cookies|just a moment/i.test(text || "")
 );
 
-const isBotProtectionPage = (text) => (
-  isCloudflareChallengePage(text) ||
-  /captcha|bot detection|automated requests?|access denied|request blocked|unusual traffic|security check|verify you are human/i.test(text || "")
-);
+const isBotProtectionPage = (text) => {
+  const t = (text || "").toLowerCase();
+  if (isCloudflareChallengePage(text)) return true;
+  // Require multiple bot-protection signals, not just one generic word
+  const signals = [
+    /captcha/i.test(t),
+    /bot detection/i.test(t),
+    /automated requests?\b/i.test(t),
+    /unusual traffic/i.test(t),
+    /verify you are human/i.test(t),
+    /please enable javascript and cookies/i.test(t),
+    /ray id:/i.test(t) && /cloudflare/i.test(t),
+    /cf[-_]?ray/i.test(t),
+    /incapsula|imperva/i.test(t),
+    /akamai|akamaiGhost/i.test(t),
+    /perimeterx|px-captcha/i.test(t),
+    /datadome/i.test(t),
+    /challenge-platform/i.test(t),
+    /just a moment/i.test(t),
+    /checking your browser/i.test(t),
+    /attention required/i.test(t) && /cloudflare/i.test(t),
+    /ddos protection by/i.test(t),
+    /waf request blocked/i.test(t)
+  ];
+  // Must match at least 1 strong signal (Cloudflare/WAF-specific) or 2+ generic signals
+  const strong = signals.slice(10).some(Boolean);
+  const generic = signals.slice(0, 10).filter(Boolean).length;
+  return strong || generic >= 2;
+};
 
 const isSoft404Page = (text, status = 200) => {
   if (status === 404) return true;
@@ -1733,9 +1758,14 @@ const startScan = async (maxDepth) => {
       state.scanDiagnostic = buildScanDiagnostic(siteUrl);
       status.innerText = state.scanDiagnostic.statusText;
     } else if (!state.isCrawlerStopped) {
-      status.innerText = state.allData.length
-        ? "Scan complete!"
-        : "Scan complete, but no endpoints, secrets, parameters, or files were found.";
+      const skipped = state.fetchFailures.length;
+      if (state.allData.length) {
+        status.innerText = skipped
+          ? `Scan complete! ${state.allData.length} items found (${skipped} pages skipped).`
+          : "Scan complete!";
+      } else {
+        status.innerText = "Scan complete, but no endpoints, secrets, parameters, or files were found.";
+      }
     } else {
       status.innerText = "Scan stopped manually.";
     }
@@ -3396,8 +3426,11 @@ function filterUrl(url) {
 function buildScanDiagnostic(targetUrl) {
   const firstFailure = state.fetchFailures[0] || "";
   const protectionBlocked = /target protection blocked automated proxy requests/i.test(firstFailure);
+  const hasRealProtection = state.fetchFailures.some(f =>
+    /cloudflare|incapsula|imperva|akamai|perimeterx|datadome|waf/i.test(f)
+  );
 
-  if (protectionBlocked) {
+  if (protectionBlocked && hasRealProtection) {
     return {
       title: "Target Protection Blocked Scan",
       statusText: "Scan complete: target protection blocked automated proxy requests.",
