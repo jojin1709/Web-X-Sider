@@ -8,6 +8,7 @@
    ============================================================ */
 (function () {
   "use strict";
+  async function fetchT(url, options) { return window.fetchTarget(url, options); }
 
   const $ = (id) => document.getElementById(id);
   const esc = (v) => (window.escapeHtml ? window.escapeHtml(v) : String(v ?? ""));
@@ -1111,7 +1112,7 @@
     // 2) Full host lookup via API (requires paid membership + key)
     if (apiKey) {
       try {
-        const apiResp = await fetch(`https://api.shodan.io/shodan/host/${ip}?key=${apiKey}`);
+        const apiResp = await fetchT(`https://api.shodan.io/shodan/host/${ip}?key=${apiKey}`);
         const apiData = await apiResp.json();
         if (apiData.error) {
           html += `<div><h5>REST API</h5><p class="warning">${esc(apiData.error)}</p></div>`;

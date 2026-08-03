@@ -152,7 +152,7 @@
     out.innerHTML = `<div class="field-status"><i class="fas fa-spinner fa-spin"></i> Querying Certificate Transparency logs...</div>`;
 
     try {
-      const res = await fetch(`https://crt.sh/?q=%25.${domain}&output=json`);
+      const res = await fetchT(`https://crt.sh/?q=%25.${domain}&output=json`);
       const data = await res.json();
       const unique = [...new Set(data.map(e => e.name_value.split("\n")).flat())].filter(n => n.endsWith(domain));
       out.innerHTML = unique.length ?

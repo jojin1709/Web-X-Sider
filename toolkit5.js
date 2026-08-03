@@ -1573,7 +1573,30 @@
     });
 
     // JWT Advanced
-    $("tokenAnalyzeBtn")?.addEventListener("click", analyzeJwt);
+    $("tokenAnalyzeBtn")?.addEventListener("click", () => {
+      const token = $("tokenInput")?.value?.trim();
+      if (!token) { toast("Paste a JWT or access token", "error"); return; }
+      const resultEl = $("tokenAnalysisResult");
+      if (!resultEl) return;
+      // Decode JWT if it has 3 parts
+      const parts = token.split(".");
+      if (parts.length === 3) {
+        try {
+          const header = JSON.parse(atob(parts[0].replace(/-/g, "+").replace(/_/g, "/")));
+          const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+          let html = `<div class="jwt-section"><h4>Header</h4><pre>${esc(JSON.stringify(header, null, 2))}</pre><h4>Payload</h4><pre>${esc(JSON.stringify(payload, null, 2))}</pre></div>`;
+          if (header.alg !== "none") {
+            const forged = btoa(JSON.stringify({ ...header, alg: "none" })).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+            html += `<div class="jwt-section"><h4>Alg:none Attack</h4><code class="jwt-forged">${esc(forged + "." + parts[1] + ".")}</code></div>`;
+          }
+          if (payload.exp && payload.exp < Date.now() / 1000) html += `<div class="jwt-warning">${badge("WARNING", "warning")} Token is EXPIRED</div>`;
+          resultEl.innerHTML = html;
+        } catch { resultEl.innerHTML = `<p class="error">Failed to decode JWT</p>`; }
+      } else {
+        // Non-JWT token — just show raw decoded info
+        resultEl.innerHTML = `<h4>Token Info</h4><p>Length: ${token.length} chars</p><p>Type: ${token.startsWith("ey") ? "Likely JWT" : "Opaque/Bearer token"}</p><pre>${esc(token.slice(0, 200))}${token.length > 200 ? "..." : ""}</pre>`;
+      }
+    });
     document.querySelectorAll(".jwt-attack-btn").forEach(btn => {
       btn.addEventListener("click", () => analyzeJwt());
     });
